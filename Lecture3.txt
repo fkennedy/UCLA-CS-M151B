@@ -1,0 +1,290 @@
+Chapter 2 - Instructions: Language of the Computer
+
+2_1
+Instruction Set
+    Book definition: Repertoire of instructions of a computer
+        Language that is spoken between the software and the hardware
+            Mechanism & what instructions the software wants to execute
+    Different computers have different instruction sets
+        May hay have many aspects in common
+    Early computers had very simple instruction sets and hence its implementation is really simple
+    Many modern computers also have simple instruction sets
+    Key tradeoff:
+        Complexity of the instruction set and its architecture design
+        Software that is implemented for the architecture
+
+Key ISA Decisions
+    Operations (that are used or are supported by the ISA)
+        How many instructions are there
+        Which ones are ones that we specifically chose for a certain operation
+        Length of these instructions
+            How many bits it will take to represent the instruction
+            Complexity and its memory
+    Operands
+        What kind of data is being operated
+        How many operands are there
+        Location in memory
+        What is the types of the operand
+        How to specify the operand (number of bits)
+
+    Example:
+        a = b + c
+        a: destination operand
+        b: source operand
+        c: source operand
+        Equation: operation
+
+    Instruction format
+        How big are the instructions
+        How many different types of formats
+        Instructions are in memory, stored like data, fetched by processor from memory
+            Size not only impacts the complexity of the coder, but also the footprint it has on the memory (how large it resides in the memory)
+
+Main ISA Classes
+    CISC ("Complex Instruction Set Computers")
+        Earlier models
+            Digital's VAX (1977) and Intel's x86 (1978)
+        Large numbers of instructions
+            Lots of different things you can do with the instruction set
+        Many specialized complex instructions
+            Worked very well in the past because memory is expensive
+                Instructions are very compact in memory
+                    Hardware design is tough
+                    Not easy to make fast
+            When memory is cheaper, move towards the RISC
+    RISC ("Reduced Instruction Set Computers")
+        Almost all machines of 80's and 90's are RISC
+            MIPS, PowerPC, DEC Alpha, IA64
+            ARM stands for Advanced RISC Machines
+        Has a lot of headway
+            Relatively fewer instructions
+                Not lower in instruction count
+                But instead having fewer choices of instructions
+                    More instructions to execute because they are simpler
+        Enable pipelining and parallelism
+            Because we have smaller tasks that can be broken down, those tasks can be overlapped
+            Complex instructions - more dependencies and harder to extract
+
+    Why is the most famous ISA (Intel x86) is CISC?
+        In architecture like x86, there's translation done in the machine
+        These complex instructions are reduced to micro ops
+            Micro ops are like RISC
+        Architecture may look like CISC, but it actually is RISC
+
+Arithmetic Operations
+    One of the classes of the ISA
+    Add and subtract have three operands
+        Two sources and one destination
+            First operand is destination, then next are source operands
+        add a, b, c     # a = b+c
+    Design Principle 1: Simplicity favours regularity
+        If you have a regular design, like common formularity and consistent format
+            It simplifies hardware's job for decoding
+            Simplifies data path in arithmetic unit
+                Source & destination
+            Makes architecture less complex
+                Validation of the design
+                    Cost is not too burdensome
+
+Arithmetic Example
+    C code:
+        f = (g+h)-(i+j);
+    Complied MIPS code:
+        add t0, g, h        # temp t0 = g+h
+        add t1, i, j        # temp t1 = i+j
+        sub f, t0, t1       # f = t0-t1 which is really just f = (g+h)-(i+j)
+
+    Even though the operation looks complex, it is broken down to become simpler
+
+Register Operands
+    Operands are stored in 3 places:
+        In the instruction itself
+            Immediate literal
+                Adding a constant
+        In the register
+            Registers are in the chip
+                MIPS has a register file
+                    Location of where registers are stored
+                    32 entries/locations
+                Each register is 32 bits
+            Much faster to access register file than its actual memory location
+                Register files as part of the memory hierarchy to give the illusion of a fast memory
+            Registers are manipulated and controlled by the compiler
+                Compiler decides what gets placed in the register files for the memory
+                    Also handles what data moves to and from the memory
+            If there's a certain memory location that we want to use often, we 
+                Move it to the register file
+                Use it a lot of times
+                If there's a change to it then write it back out to memory
+            5 bits to specify register location
+                Locations are numbered 0 to 31
+                Address
+                    Place to look up data value
+                    Locations hold 32 bits
+            Assembler names
+                $t0, $t1, ..., $t9 are used for temporary values
+                $s0, $s1, ..., $s7 are used for saved variables
+        In memory
+    Design Principle 2: Smaller is faster
+        If you look in the memory and memory structures in SRAM, it's a dense mesh of wires
+            If you look at scaling of wires, larger structures don't scale very well
+                Wire length involved is long
+        Smaller amounts of memory
+            Access latency is shorter
+                Speed is related to physical design
+
+Register Operand Example
+    C code:
+        f = (g+h)-(i+j);
+            f, ..., j in $s0, ..., $s4
+    Complied MIPS code:
+        add $t0, $s1, $s2        # temp t0 = s1+s2 or g+h
+        add $t1, $s3, $s4        # temp t1 = s3+s4 or i+j
+        sub $s0, $t0, $t1        # f = t0-t1 which is really just f = (s1+s2)-(s3+s4) or (g+h)-(i+j)
+
+    Certain instructions are dependent/independent of others
+
+Memory Operands
+    Used more heavily in CISC
+    In RISC machines, there are instructions that typically handle memory transfer into registers
+        There are also other operations that just handle register values
+        MIPS have simplified view of dealing with memory
+            Explicit instructions to handle registers
+            Operate data in registers then move it back to memory
+            Each instruction may access memory directly
+                May simplify the amount of code required
+                    May be complicated because of the different formats possible
+    Memory is gigantic array (for now)
+        Each address identifies an 8-bit byte
+        4 gigabytes will have 32 bits to address that memory
+            One byte per entry, we will have 4 gigabytes worth of memory
+    Words are aligned in memory
+        32-bit - 4 bytes
+        4 byte granularity for load instructions
+            Will make use of byte addresses
+        Address must be a multiple of 4
+    MIPS is Big Endian
+        When looking at a multi-bit variable
+            Most-significant byte at least address of a word
+        Little Endian is when the least-significant byte is at least address
+
+        Example:
+            Big Endian
+                Store 0x12345678 at 0x408ba0
+                0x408ba0: 12 34 56 78
+                0x408ba8: -----------
+            Little Endian (x86)
+                Store 0x12345678 at 0x408ba0
+                0x408ba0: 78 56 34 12
+                0x408ba8: -----------
+
+Memory Operand Example 1
+    C code:
+        g = h + A[8];
+            g in $s1, h in $s2, base address of A in $s3
+    Compiled MIPS code:
+        Index 8 requires offset of 32
+            4 bytes per word: 4*8
+        lw $t0, 32($s3)         # load word
+                                # 32 is the offset
+                                # $s3 is the base register
+                                # basically it's saying load address of (address of $s3 + 32)
+                                # If $s3 = 0x500, A[0] will be contained in 0x500 0x501 0x502 0x503
+                                # Therefore A[8] will be in 0x520 0x521 0x522 0x523
+        add $s1, $s2, $t0
+
+Memory Operand Example 2
+    C code:
+        A[12] = h + A[8];
+            h in $s2, base address of A in $s3
+    Compiled MIPS code:
+        Index 8 requires offset of 32
+            4 bytes per word: 4*8
+        Index 12 requires offset of 48
+            4 bytes per word: 4*12
+        lw $t0, 32($s3)         # load word
+        add $t0, $s2, $t0
+        lw $t0, 48($s3)         # store word
+
+Registers vs. Memory
+    Registers are faster to access than memory
+        Because of physical nature of registers versus off chip latency large capacity nature of memory
+    For MIPS, you need to have operators to load and store on memory
+        Pull values from memory
+        Perform arithmetic operations
+        More instructions
+    For CISC, directly access data values stored in memory
+    Compiler must use registers for variables as much as possible
+        Spilling
+            If we need to maintain 33 values and we only have 32 registers
+            Take the register currently not being used (or even when it's used)
+            Write value into memory if not existing yet
+            More loads to take more values from memory or vice versa
+
+2_2
+Immediate Operands
+    Memory and register operands are two possible sources for operands
+        Program itself may change from data input to data input or across the execution of the same program
+        Data can change because of level of indirection
+    Constant data specified in an instruction
+        Do not change
+        They are in memory, but they are read-only
+            addi $s3, $s4, 4
+    No subtract immediate instruction
+        Just use a negative constant
+            addi $s2, $s1, -1
+        Try to save the amount of instructions provided
+            Part of the RISC philosophy
+    In MIPS, size of constant is 16 bits (embedded into instruction)
+        32 bits numbers that are added and subtracted
+        16 bits is usually enough to hold the constant
+        Design Principle 3: Make the common case fast
+            Embed 16 bits into the instruction to avoid additional load instruction
+            Constants are often small, they keep instructions small
+
+The Constant Zero
+    MIPS register 0 ($zero) is the constant 0
+        Cannot be overwritten
+        It's always the value zero
+    Useful for common operations
+        Can be used to do other operations
+        E.g. move between registers
+            add $t2, $s1, $zero
+
+Range for unsigned binary integer
+    0 to 2^n-1
+Range for complement signed binary integer
+    -2^(n-1) to +2^(n-1)-1
+    1st bit used for sign
+        1 for negative
+        0 for positive
+    The rest 31 bits are used for the magnitude
+        Non-negative numbers have the same unsigned and 2s-complement representation
+    Specific numbers:
+        0: 0000 0000 ... 0000
+       -1: 1111 1111 ... 1111
+       Most negative: 1000 0000 ... 0000
+       Most positive: 0111 1111 ... 1111
+
+Signed Negation
+    Complement and add 1
+        Complement means 1 -> 0, 0 -> 1
+        x + x_bar = 1111 ... 1111 = -1
+        x_bar + 1 = -x
+    Example: negate +2
+        +2 = 0000 0000 ... 0010
+        -1 = 1111 1111 ... 1101 + 1
+           = 1111 1111 ... 1110
+
+Sign Extension
+    Representing a number using more bits
+        Preserve the numeric value
+    In MIPS instruction set
+        addi: extend immediate value
+        lb, lh: extend loaded byte/halfword
+        beq, bne: extend the displavement
+    Replicate the sign bit to the left
+        c.f. unsigned values: extend with 0s
+    Examples: 8-bit to 16-bit
+        +2: 0000 0010 => 0000 0000 0000 0010
+        -2: 1111 1110 => 1111 1111 1111 1110

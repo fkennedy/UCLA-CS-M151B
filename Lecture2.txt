@@ -1,0 +1,383 @@
+Chapter 1 - Computer Abstractions and Technology
+
+1_3
+Defining Performance
+    We're always considering the performance bound
+    Using airplanes as an analog for computer performance
+        Different types of factors are considered for an airplane's performance:
+            Passenger capacity (how many passengers it can carry)
+            Cruising range (how far can it go)
+            Cruising speed (how fast can it go)
+            Passengers x mph (measure of overall throughput)
+        Boeing 747 has the highest throughput
+
+Response Time and Throughput
+    Response time is how long it takes to do a task
+        From start to finish
+        Different with throughput
+    Throughput is the total work done per unit time
+        It's usually the number of tasks/transactions/... per hour
+        How much bandwidth can a processor supply
+        More important than response time
+    Example: Response time of a single instruction may be in nanoseconds. Throughput will be how many instructions are run per second.
+    Processors in response time and throughput
+        Upgrading processor could reduce response time and increase throughput.
+        Using a processor that supports multi-threading and others may also improve in response time and throughput.
+        Adding more processors won't help response time of a single job (if the job is single-threaded) but it may improve overall throughput of the system.
+        Talk more about how they are related with processor modification
+
+Relative Performance
+    We define Performance = 1 / Execution Time
+    "X is n times faster than Y"
+        Performance_X / Performance_Y = ExecutionTime_Y / ExecutionTime_X = n
+    Example:
+        Time taken to run a program will be:
+            10s on A
+            15s on B
+        Therefore ExecutionTime_B / ExecutionTime_A = 15/10 = 1.5
+        X is 1.5 times faster than Y
+
+Measuring Execution Time
+    Elapsed time
+        Time taken to do a task from start to finish
+        Total response time, including all aspects
+            Processing, I/O, OS overhead, idle time
+        Determines system performance
+    CPU time
+        Time spent processing a given job
+            Discounts I/O time, other jobs' shares
+            Doesn't consider idle time
+        Comprises user CPU time and system CPU 
+            User CPU time - Time for the actual program
+            System CPU time - Time for the kernel operating system in servicing the program
+        Different programs are affected differently by CPU and system performance
+        If a program has a lot of I/O and not a lot of crunching numbers or processing in general, upgrading the CPU will not help because CPU time won't be improved (doesn't consider I/O time)
+
+CPU Clocking
+    Many circuit pads in a processor have different delays and different times for routing different parts on the processor
+    Stabilizing the various pads and ensuring all the values are ready at the inputs/outputs of the processor, we'll measure time taken with a CPU clock
+        Regularize/Synchronize the processor
+    Clock period
+        Duration of a clock cycle
+    Clock frequency
+        1 / Clock Period
+        Number of cycles per second
+
+CPU Time
+    CPU Time = CPU Clock Cycles * Clock Cycle Time
+             = CPU Clock Cycles / Clock Rate
+    Performance can be improved by:
+        Reducing the number of cycles
+            How long the processor takes in doing a cycle
+        Increasing the clock rate
+            How many executions it can do
+        Hardware designer could trade off clock rate against cycle count
+    Example:
+        Computer A: 2GHz clock, 10s CPU time
+        Designing Computer B
+            Aim for 6s CPU time
+            Can do faster clock, but causes 1.2 * clock cycles
+        How fast must Computer B clock be?
+            ClockRate_B = ClockCycles_B / CPUTime_B
+                        = 1.2 * ClockCycles_A / 6s
+            ClockCycles_A = CPUTime_A * ClockRate_A
+                          = 10s * 2GHz
+                          = 20 * 10^9
+            ClockRate_B = 1.2 * 20 * 10^9 / 6s
+                        = 24 * 10^9
+                        = 4GHz
+        Summary: In order to take 4s less to process jobs and accommodate the increase of clock cycles, I would need a 4GHz clock
+
+Instruction Count and Cycles Per Instruction (CPI)
+    Clock Cycles = Instruction Count * Cycles per Instruction
+    CPU Time = Instruction Count * CPI * Clock Cycle Time
+             = Instruction Count * CPI / Clock Rate
+
+    Instruction Count for a program
+        Determined by program, ISA, and compiler
+        How many instructions are executed in the course of executing a program
+        Static instruction count
+            How many instructions does it have when it stores on disk/memory
+        Dynamic instruction count
+            How many instructions does it have when running the program
+            Considering for/while/... loops
+    Average cycles per instruction
+        Instructions may be different, some can be arithmetic, some can be only accessing memory
+        Depending on complexity, number of cycles are different
+        If different instructions have different CPI
+            Average CPI affected by instruction mix
+
+CPI Example
+    Computer A: Cycle Time = 250ps, CPI = 2.0
+    Computer B: Cycle Time = 500ps, CPI = 1.2
+    Same ISA
+    Which is faster and by how much?
+        If we consider by Cycle Time, A is faster
+        If we consider by CPI, B is faster
+        So we have to consider both together by combining them
+    CPUTime_A = InstructionCount * CPI_A * CycleTime_A
+              = I * 2.0 * 250ps
+              = I * 500ps
+    CPUTime_B = InstructionCount * CPI_B * CycleTime_B
+              = I * 1.2 * 500ps
+              = I * 600ps
+    CPUTime_B / CPUTime_A = I * 600ps / (I * 500ps) = 1.2
+    A is faster by 1.2 times
+
+CPI in More Detail
+    If different instruction classes take different numbers of cycles
+        Clock Cycles = n Sigma i=1 (CPI_i * InstructionCount_i)
+    Weighted average CPI
+        CPI = Clock Cycles / Instruction Count
+            = n Sigma i=1 (CPI_i * InstructionCount_i / InstructionCount)
+    Example:
+        Alternative compiled code sequences using instructions in classes A, B, and C
+
+        Class               A   B   C
+        CPI for class       1   2   3
+        IC in sequence 1    2   1   2
+        IC in sequence 2    4   1   1
+
+        Sequence 1: IC = 5
+        Clock Cycles = 2*1 + 1*2 + 2*3
+                     = 10
+        Avg. CPI = 10/5 = 2.0
+
+        Sequence 2: IC = 6
+        Clock Cycles = 4*1 + 1*2 + 1*3
+                     = 9
+        Avg. CPI = 9/6 = 1.5
+
+Performance Summary (Big Picture)
+    CPU Time = Instructions / Program * Clock cycles / Instruction * Seconds / Clock cycle
+    
+    Instructions / Program
+        Number of instructions per program
+        Instruction Count (IC)
+        Dynamic count of instructions executed from start to finish of a program
+    Clock cycles / Instruction
+        Number of clock cycles per instruction
+        CPI
+    Seconds / Clock cycle
+        Cycle Time 
+        CT or T_c
+
+    Performance depends on
+        Algorithm: affects IC, possibly CPI
+            Better algorithm might use lesser instructions
+                Or more
+            Algorithm affects which instructions are chosen
+                Each instruction have different number of cycles
+            Doesn't affect base clock - influenced by hardware not software
+        Programming language: affects IC, CPI
+        Compiler: affects IC, CPI
+        ISA: affects IC, CPI, T_c
+
+        Software design: Affects IC/CPI
+        Hardware design: Affects T_c
+
+1_4
+While performance is important, power is also important
+Power is considered as a first-class constraint
+When designing, have to consider power
+Power Trends
+    Should see increase in clock rate but decrease in power
+    In CMOS IC technology:
+        Power = Capacitive load * Voltage^2 * Frequency
+    Decrease in power is because of the increasing use of multi-cores
+    Dynamic Voltage scale is when the voltage is increased/decreased depending on the use of processor
+
+Reducing Power
+    Suppose a new CPU has
+        85% of capacitive load of old CPU
+        15% voltage and 15% frequency reduction
+    P_new / P_old
+    = C_old * 0.85 * (V_old * 0.85)^2 * F_old * 0.85 / (C_old * V_old^2 * F_old)
+    = 0.85^4
+    = 0.52
+    The power wall
+        We can't reduce voltage further
+        We can't remove more heat
+    How else can we improve performance?
+
+Uniprocessor Performance
+    Up to 1986, we only have a 25% increase in performance per year
+    But then after that we have 52% increase in performance per year
+    We then go back to 22% increase in performance per year starting 2003 because now there are constraints in power, instruction-level parallelism, and memory latency
+
+Multiprocessors
+    Multicore microprocessors
+        More than one processor per chip
+    Requires explicitly parallel programming
+        Compare with instruction-level parallelism
+            Hardware executes multiple instructions at once
+            Hidden from the programmer
+        Hard to do
+            Programming for performance
+            Load balancing
+            Optimizing communication and synchronization
+
+SPEC CPU Benchmark
+    Programs used to measure performance
+        Supposedly typical of actual workload
+    Standard Performance Evaluation Corp (SPEC)
+        Develops benchmarks for CPU, I/O, Web, ...
+        Standardized
+    SPEC CPU2006
+        Elapsed time to execute a selection of programs
+            Negligible I/O, so focuses on CPU performance
+        Normalize relative to reference machine
+        Summarize as geometric mean of performance ratios
+            CINT2006 (integer) and CFP2006 (floating-point)
+
+Pitfall: Amdahl's Law
+    Good questions to think about what it means for a trade-off
+    If you're trying to improve a certain aspect of a computer, you have to expect a proportional improvement in overall performance
+        T_improved = T_affected / ImprovementFactor + T_unaffected
+    Example: multiply accounts for 80s/100s
+        80s = T_affected
+        100s = Total time = T_affected + T_unaffected
+        How much improvement in multiply performance to get 5x overall?
+            20 = 80/n + 20
+               = Can't be done!
+        Therefore, we have to focus on a proportional improvement
+    Corollary: Make the common case fast
+
+Pitfall: MIPS as a Performance Metric
+    MIPS: Millions of Instructions Per Second
+        Doesn't account for differences in
+            ISAs between computers
+            Complexity between instructions
+
+Multicycle MIPS Datapath
+    Number of cycles for a type of instruction
+        Load: 5
+            Read instruction
+            Decode/read registers
+            ALU adds immediate to register to form address
+            Address passed to memory; data is read into MDR
+            Data in MDR is stored into destination register
+        R-type: 4
+            Read instruction
+            Decode/read registers
+            ALU operation
+            ALU Result stored back to destination register.
+        Store: 4
+            Read instruction
+            Decode/read registers
+            ALU adds immediate to a register to form address
+            Save data from the other source register into memory at address from cycle 3
+        Branch: 3
+            Read instruction
+            Get branch address (ALU); read regs for comparing.
+            ALU compares registers; if branch taken, update PC
+        Jump: 3
+            Read instruction
+            Get jump address (ALU); read regs for comparing.
+            ALU compares registers; if jump taken, update PC
+
+Lecture Notes
+Design and implementation of the CPU:
+    ISA - Instruction Set Architecture
+        contains registers, codes, memory flow
+    ALU - Arithmetic Logic Unit
+ISA is MIPS (Millions of Instructions Per Second)
+    It is a Reduced Instruction Set Computing (RISC) architecture
+
+Latency vs. Throughput
+    Basic operations
+        ADD - add
+        LW - load word
+        MULT - multiply
+        SW - store word
+        BEQ - branch equals qword
+
+    Sample code:
+        while(...) {
+            x[i] = y[i] + z;
+        }
+
+        This sample code will be converted into the 5 basic operations
+        START:  LW
+                ADD
+                MULT
+                ADD
+                SW
+                BEQ
+        Load:
+            CPU is going to get the instruction
+                Will figure out what is the instruction?
+                What type of instruction is it?
+                What registers are required?
+                What memory to extract from?
+                Write back to the memory?
+
+            Latency of the load is the time taken to satisfy: from beginning to the end of a load
+
+    Latency is basically the notion of time
+        An overlap is execution time saved
+            Will result in the reduction of overall latency
+    Throughput is the amount of work you could do per unit time
+
+ET = IC * CPI * CT
+    ET: Execution Time - the same as CPU Time
+    IC: Instruction Count - not how many instructions are there in memory, but how many instructions are given to the CPU
+        Static behavior: in the sample code above, there are 6 instructions
+        Dynamic behavior: in the sample code above, there are 6n instructions where n is how many times it is repeated (at run-time)
+    CPI: Cycles Per Instruction
+    CT: Cycle Time
+
+    Assume this implementation:
+        ADD  -> 3 cycles (30%)
+        LW   -> 5 cycles (20%)
+        MULT -> 8 cycles (5%)
+        SW   -> 4 cycles (15%)
+        BEQ  -> 4 cycles (30%)
+
+        Therefore, the CPI will be:
+            3 * 0.3 + 5 * 0.2 + 8 * 0.05 + 4 * 0.15 + 4 * 0.3 = 4.1
+
+Example:
+    4 GHz clock
+
+    Computer A    
+        1 billion instructions
+        40% LW (5)
+        30% ARITH (4)
+        20% SW (4)
+        10% BRANCH (3)
+
+    Computer B (ISA unchanged)
+        Instructions are decreased by 10% = 0.9 billion instructions
+        30% LW
+        40% ARITH
+        15% SW
+        15% BRANCH
+
+    IC = 1 * 10^9
+    CT = 1 / (4 * 10^9) = 0.25 * 10^-9
+    
+    CPI_A = 5 * 0.4 + 4 * 0.3 + 4 * 0.2 + 3 * 0.1 = 4.3
+    ET_A  = IC * CPI_A * CT
+          = 1.075s
+    
+    CPI_B = 5 * 0.3 + 4 * 0.4 + 4 * 0.15 + 4 * 0.15 = 4.15
+    ET_B  = IC * CPI_B * CT
+          = 0.93s
+
+    Hardware didn't change so Cycle Time should be the same.
+    ISA didn't change so number of cycles should be the same.
+    The only thing that changed is the CPI because the breakdown of each operation is different.
+
+    Comupter C (ISA changed)
+        3.7 GHz clock
+        25% of LW's is changed to LAW (6)
+        Breakdown:
+            LAW: 0 -> 10
+            LW: 40 -> 30
+            ADD: 30 -> 20
+            SW: 20
+            BR: 10
+            Total: 100 -> 90
+            Therefore, instructions are decreased by 10%
+        0.9 billion instructions

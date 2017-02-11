@@ -1,0 +1,166 @@
+Chapter 3: Arithmetic for Computers
+
+3_1
+Arithmetic for Computers
+    Operations on integers
+        Addition and subtraction
+        Multiplicaion and division
+        Dealing with overflow
+    Floating-point real numbers
+        Representation and operations
+
+Integer Addition
+    Example: 7+6
+    000111+000110
+    01+00 = 01
+    01+01 = 10 (there's a carry)
+        If you convert to integer, it makes sense
+            1+0 = 1 (1)
+            1+1 = 2 (10)
+    Overflow if result out of range
+        Finite amount of storage
+        Adding +ve and -ve operands, no overflow
+        Adding two +ve operands
+            Overflow if result sign is 1
+        Adding two -ve operands
+            Overflow if result sign is 0
+
+Integer Subtraction
+    Add negation of second operand
+    Example: 7-6 = 7+(-6)
+    +7: 0000 0000 ... 0000 0111
+    -6: 1111 1111 ... 1111 1010
+    Overflow if result out of range
+        Subtracting two +ve or two -ve operands, no overflow
+        Subtracting +ve from -ve operand
+            Overflow if result sign is 0
+        Subtracting -ve from +ve operand
+            Overflow if result sign is 1
+
+Dealing with Overflow
+    Language-dependent if they have some sort of handling
+    Some languages (e.g., C) ignore overflow
+        Use MIPS addu, addui, subu instructions
+    Other languages (e.g., Ada, Fortran) require raising an exception
+        Use MIPS add, addi, sub instructions
+        On overflow, invoke exception handler
+            Save PC in exception program counter (EPC) register
+            Jump to predefined handler address
+            mfc0 (move from coprocessor reg) instruction can retrieve EPC value, to return after corrective action
+
+Arithmetic Logic Unit Design
+    Instruction Fetch -> Decode -> Operand Fetch -> Execute -> Result Store -> Next Intruction -> Repeat
+
+    Input:
+        a
+        b
+            32-bit opernads
+        ALU Operation
+            Operation to be done
+    Output:
+        (Ultimate) CarryOut
+        Zero
+            Whether the result was zero
+            Used by branch instructions
+        Result
+            Same number of bits as a & b (depending how many bits the ALU is)
+        Overflow
+            Whether there is an overflow
+
+One Bit ALU
+    Performs AND, OR, and ADD
+        on 1-bit operands
+        Components:
+            AND gate
+            OR gate
+            1-bit adder
+            Multiplexor
+    ALU:
+        All kinds of operations are performed
+        The "ALU Operation" will determine which one are we using
+            Used to select the result
+
+One Bit Full Adder
+    Also known as (3,2) adder
+        3 inputs: a, b, CarryIn
+        2 outputs: CarryOut, Sum
+    Half Adder
+        No CarryIn
+
+    CarryOut Logic Equation
+        CarryOut = !a & b & CarryIn | a & !b & CarryIn | a & b & !CarryIn | a & b & CarryIn
+        CarryOut = b & CarryIn | a & CarryIn | a & b
+
+    Sum Logic Equation
+        Sum = !a & !b & CarryIn | !a & b & !CarryIn | a & !b & !CarryIn | a & b & CarryIn
+
+3_2
+32-bit ALU
+    Ripple carry ALU
+        Essentially, we just combine 32 1-bit ALUs.
+        The CarryOut of a_0/b_0 will be used as a CarryIn of a_1/b_1
+
+Subtraction?
+    Expand our 1-bit ALU to include an inverter
+        2's complement: take inverse of every bit and add 1
+
+Overflow
+    For N-bit ALU
+        Overflow = CarryIn[N-1] XOR CarryOut[N-1]
+            Most-significant (N-1) bit ALU
+
+Zero Detection
+    Conditional Branches
+    One big NOR gate
+    Zero = (Result_N-1 + Result_N-2 + ... + Result_0)
+    Any non-zero result will cause zero detection output to be zero
+        If it's not zero, means that the result is 0
+
+Set-On-Less-Than (SLT)
+    SLT produces a 1 if rs < rt, and 0 otherwise
+        All but least significant bit will be 0
+        How do we set the least signficant bit?
+        Can we use subtraction?
+            rs-rt < 0
+        Set the least significant bit to the sign-bit of (rs-rt)
+        New input: LESS
+        New output: SET
+
+SLT Implementation
+    Set of MSB is connected to less of LSB
+    Less input of every other ALU is hardwired to 0
+
+Final ALU
+    Should feel comfortable identifying what signals accomplish:
+        add
+        sub
+        and
+        or
+        nor
+        slt
+
+3_3
+Can We Make a Faster Adder?
+    Worst case delay for N-bit Ripple Carry Adder
+        2N gate delays
+            CarryIn have to go through the delay of an AND gate and another OR gate in order to be CarryOut
+            2 gates per CarryOut
+                AND, OR 
+            N CarryOuts
+    We will explore the Carry Lookahead Adder
+        Generate - Bit i creates new Carry
+            g_i = A_i & B_i
+
+Partial Carry Lookahead Adder
+    Connect several N-bit Lookahead Adders together
+    Four 8-bit carry lookahead adders can form a 32-bit partial carry lookahead adder
+
+Generate and Propagate
+    G_alpha = G_0*P_1*P_2*P_3+G_1*P_2*P_3+G_2*P_3+G_3
+    P_alpha = P_0*P_1*P_2*P_3
+
+Hierarchical CLA
+    C_4 = G_alpha+C_0*P_alpha
+    C_8 = G_beta+G_alpha*P_beta+C_0*P_alpha*P_beta
+    C_12 = G_gamma+G_beta*P_gamma+G_alpha*P_beta*P_gamma+C_0*P_alpha*P_beta*P_gamma
+    C_16 = G_sigma+G_gamma*P_sigma+G_beta*P_gamma*P_sigma+G_beta...

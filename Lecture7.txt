@@ -1,0 +1,123 @@
+Chapter 4: The Processor
+
+4_1
+Introduction    
+    CPU performance factors
+        Instruction count
+        CPI and cycle time
+    Examin two data path implementations of MIPS
+        A single-cycle implementation
+        A pipelined version
+    Simple subset, shows most aspects
+        Memory reference: lw, sw
+        Arithmetic/logical: add, sub, and, or, slt
+        Control transfer, beq, j
+
+Instruction Execution
+    PC -> instruction memory, fetch instruction
+    Register numbers -> register file, read registers
+    Depending on instruction class
+        Use ALU to calculate
+            Arithmetic result
+            Memory address for load/store
+            Branch target address
+                PC+4+offset
+        Access data memory for load/store
+        PC <- target address or PC+4
+
+CPU Overview
+    PC -> Instruction memory -> registers -> ALU -> Data memory
+
+Logic Design Basics
+    Information encoded in binary
+        Low voltage = 0, High voltage = 1
+        One wire per bit
+        Multi-bit data encoded on multi-wire buses
+    Combinational element
+        Operate on data
+        Output is a function of input
+    State (sequential) elements
+        Store information
+
+Combinational Elements
+    AND-gate
+        Y = A & B
+    Adder
+        Y = A + B
+    Multiplexer
+        Y = S ? I1 : I0
+    ALU
+        Y = F(A, B)
+
+Sequential Elements
+    Register: stores data in a circuit
+        Uses a clock signal to determine when to update the stored value
+        Edge-triggered: update when clk changes from 0 to 1
+
+    Register with write control
+        Only updates on clock edge when write control input is 1
+        Used when stored value is required later
+
+Clocking Methodology
+    Combinational logic transforms data during clock cycles
+        Between clock edges
+        Input from state elements, output to state element
+        Longest delay determines state period
+
+4_2
+Building a Datapath
+    Datapath    
+        Elements that process data and addresses in the CPU
+            Registers, ALUs, mux's, memories, ...
+    We will build a MIPS datapath incrementally
+        Refine the overview design
+
+Instruction fetch
+    32-bit register PC
+        Provides address to the instruction memory
+    There's an adder to increment by 4 for the next instuction goes back to point to the program counter
+
+R-Format Instructions
+    Read two register operands as inputs
+    Perform arithmetic/logical operation
+    Write register result
+
+Load/Store Instructions
+    We need to be able to read register operands
+        rs (for both store and load), rt (for store)
+    Calculate address using 16-bit offset
+        Use ALU, but sign-extend offset to get 32-bits
+    Data memory unit
+        Address port to specify where in the memory we are doing reading/writing
+        Read data to pull data out of memory
+        Write data to put values into memory
+        MemWrite control line - write data into memory
+        MemRead control line - read data from memory
+    Load: Read memory and update register
+    Store: Write register value to memory
+
+Branch Instructions
+    Read register operands
+        rs, rt
+    Compare operands
+        Use ALU, subtract and check the zero output
+            If they are equal
+    Calculate target address
+        Sign-extend displacement
+        Shift left 2 placements
+        Add to PC+4
+
+Composing the Elements
+    First-cut data path does an instruction in one clock cycle
+        Each datapath element can only do one function at a time
+        Hence, we need separate instruction and data memories
+    Use multiplexers where alternate data sources are used for different instructions
+
+R-Type/Load/Store Datapath
+    Registers
+        Instructions coming from the left
+        Instruction fetch is done (PC+4 stuff)
+        rs, rt, rd inputs
+
+4_3
+Full Datapath

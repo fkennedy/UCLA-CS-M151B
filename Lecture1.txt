@@ -1,0 +1,203 @@
+Glenn Reinman
+4731G Boelter Hall
+reinman@cs.ucla.edu
+
+Chapter 1 - Computer Abstractions and Technology
+
+1_1
+Introduction
+Computer Revolution
+    Use small processors to do computations
+    Moore's Law - doubling of transistor density
+        More capacity to do more stuff
+        Increase in capability makes novel applications feasible
+            Computers in automobiles
+            Cell phones
+            WWW
+            Search engines
+
+Classes of Computers
+    What kind of computer depends on what you're trying to use it for
+    Types:
+        Personal computers
+            Designed for one individual at a time
+            General purpose
+            Cost and performance is directly related
+        Server computers
+            High capacity in resources
+            Network based
+            Reliable
+        Supercomputers
+            High-end computers for scientific and engineering calculations
+            Highest capability
+                Small fraction of the market (not used by everyone)
+        Embedded computers
+            Hidden
+            Stringent power/performance/cost constraints
+                Have a performance target to reach
+            Fixed battery life
+
+Post-PC Era
+    Smart phones are getting increasingly more popular
+        Smart phones != Cell phones
+    Personal Mobile Device (PMD)
+        Battery-operated
+        Connects to the internet
+        Examples:
+            Smart phones
+            Tablets
+            Electronic glasses
+    Cloud computing
+        Warehouse Scale Computers (WSC)
+        Software as a Service (SaaS)
+        Portion of software run on a PMD and a portion run in the Cloud
+        Examples:
+            iCloud
+            Google Drive
+
+Objectives
+    How programs are translated into the machine language
+    How hardware executes and interprets them
+    Hardware/software interface
+    Program performance and how to improve it
+        Both software and hardware
+
+Performance
+    Algorithm
+        Number of operations executed
+        Efficiency
+    Programming language, compiler, architecture
+        Number of machine instructions executed per operation
+    Processor and memory system
+        How fast instructions are executed
+    I/O system (including OS)
+        How fast I/O operations are executed
+
+8 Gr8 Ideas
+    Design for Moore's Law
+        Lots of silicon chips -> Lots of computation power   
+    Use abstraction to simplify design
+    Make the common case fast
+    Performance via parallelism
+    Performance via pipelining
+        Special case of parallelism
+        Have stages in processing
+    Performance via prediction
+        Hard to figure out what the software does
+        If statement
+            Will go to then
+            Or else
+    Hierarchy of memories
+        Instead of having one type of memory, we will have one large array of memory
+        And make it look like we have multiple types of memory
+    Dependability via redundancy
+        Does the same functionality as something else
+            Though wasteful, it may be reliable (in case of crashes)
+
+Below Your Program
+    Application software
+        Written in high-level language
+        Humans can read it easily
+        Machines need to interpret it
+    System software
+        Compiler translates the HLL code to machin code
+        Operating system handles the service code
+            Handling I/O
+            Manage memory and storage
+            Scheduling tasks & sharing resources
+    Diagram:
+        Three concentric circles:
+            Innermost -> Outermost
+            Hardware, Systems software, Applications software
+
+Levels of Program Code
+    High-level language
+        Level of abstraction closer to problem domain
+        Provides for productivity and portability
+        Example:
+            swap(int v[], int k) {
+                int temp;
+                temp = v[l];
+                v[k] = v[k+1];
+                v[k+1] = temp;
+            }
+    Assembly language
+        Textual representation of instructions
+        Example:
+            muli    $2, $5, 4
+            add     $2, $4, $2
+            lw      $15, 0($2)
+            lw      $16, 4($2)
+            lw      $16, 0($2)
+            lw      $15, 4($2)
+            jr      $31
+    Hardware language
+        Binary digits (bits)
+        Encoded instructions and data)
+        Example
+            00000000101000010000000000011000.........
+
+1_2
+Components of a Computer
+    Same components for all kinds of computer
+    I/O includes
+        User-interface devices
+        Storage devices
+        Network adapters
+
+iPad
+    Capactitive multitouch LCD screen
+    3.8 V, 25 Watt-hour battery
+    Computer board
+        A5 - chip
+
+Inside the System on Chip (SoC)
+    Snapdragon 810
+
+Inside the Processor (CPU)
+    Datapath: performs operations on data
+    Control: sequences datapath, memory, ...
+    Cache memory
+        Small, fast SRAM memory for immediate access to data
+        Close to the processor
+            Holds variables
+            Top of the memory hierarchy
+            
+                MORE ON HIERARCHY:
+                    Latency
+                    Storage
+                    Quick but small
+                    Large but slow
+                    Illusion of one large memory
+
+    Examples of Processor:
+        Cortex-A57
+        Cortex-A53
+
+Abstractions
+    Instruction set architecture (ISA)
+        Most important abstraction
+        Language used by the compiler to speak to the processor
+        Hardware/software interface
+
+Technology Trends
+    Electronics technology continues to evolve
+        Increased capacity and performance
+        Reduced cost
+
+Semiconductor Techonlogy
+    Silicon
+    Add materials to transform properties:
+        Conductors
+        Insulators
+        Switch
+
+Manufacturing Integrated Circuits (ICs)
+    Yield: for a given wafer, how much of those dies will be functioning
+
+Integrated Circuit Cost
+    Cost per die = Cost per wafer / (Dies per wafer * Yield)
+    Dies per wafer ≈ Wafer area / Die area
+    Yield = 1 / (1 + (Defects area * Die area / 2))^2
+    Nonlinear relation to area and defect rate
+    W

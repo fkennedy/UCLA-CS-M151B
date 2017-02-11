@@ -1,0 +1,364 @@
+2_3
+Representing Instructions
+    Instructions are encoded in binary
+        They are called machine code
+    MIPS instructions
+        Encoded as 32-bit instruction words
+        Small number of formats encoding operation code (opcode), register numbers, ...
+        Regularity!
+    Register numbers
+        $t0-$t7 are registers 8-15
+        $t8-$t9 are registers 24-25
+        $s0-$s7 are registers 16-23
+
+MIPS R-format Instructions
+    Useful for a variety of reasons
+    32 bit value format:
+        op(6) rs(5) rt(6) rd(shamt) shamt(5) funct(6)
+    Instruction fields:
+        op: operation code (opcode)
+            Number that indicates that it's an R-format instruction
+            More interesting role for other format instructions
+            For R-format, it's all the same
+                Defines what instructions to use
+        rs: first source register number
+            Register source
+        rt: second source register number
+            Second register source
+        rd: destination register number
+            rs, rt, and rd are 5 bits because there are 32 registers and we need to specify properly which register we are referring to
+        shamt: shift amount (00000 for now)
+            Indication of how much to shift
+            Most of R-format, we're not going to use it
+                Also for the rest of the class
+        funct: function code (extends opcode)
+            Indicate what type of operation should be performed by the R-format instruction
+                Add, Subtract, AND or whatever
+
+R-format Example
+    add $t0, $s1, $s2               # Destination is first!
+        special $s1 $s2 $t0 0 add
+        0 17 18 8 0 32              # $s1 is register 17, $s2 is register 18, $t0 is register 8. 
+        000000 10001 10010 01000 00000 100000
+        00000010001100100100000000100000_2 = 0x02324020
+
+MIPS I-format Instructions
+    32 bit value format:
+        op(6) rs(5) rt(5) constant/address(16)
+    Instruction fields:
+        rs: destination register number
+        rt: destination or source register number
+        constant: -2^15 to 2^15-1
+        address: offset added to base address in rs
+            Embedded literal/constant
+    Design Principle 4: Good design demands good compromises
+        Different formats complicate decoding, but allow 32-bit instructions uniformly
+        Keep formats as similar as possible
+
+Stored Program Computers
+    Instructions represented in binary, just like data
+    Instructions and data stored in memory
+        Memory is broken down into:
+            Accounting program (machine code)
+            Editor program (machine code)
+            C compiler (machine code)
+            Payroll data
+            Book text
+            Source code in C for editor program
+    Programs can operate on programs
+        Compilers, linkers
+
+Logical Operations
+    Instructions for bitwise manipulation
+        Operation C Java MIPS
+        Shift left << << sll
+        Shift right >> >>> srl
+        Bitwise AND & & and, andi
+        Bitwise OR | | or, ori
+        Bitwise NOT ~ ~ nor
+    Useful for extracting and inserting groups of bits in a word
+
+Shift Operations
+    shamt: how many positions to the shift
+    Shift left logical
+        Shift left and fill with 0 bits
+        sll by i bits multiplies by 2^i
+    Shift right logical
+        Shift right and fill with 0 bits
+        srl by i bits divides by 2^i (unsigned only)
+
+    Other than shift logical, there's also shift arithmetic which takes the sign bit into account and therefore can be used in signed integers
+
+AND Operations
+    Useful to mask bits in a word
+        Select some bits, clear others to 0
+    and $t0, $t1, $t2
+        0011 & 1111 = 0011
+
+OR Operations
+    Useful to include bits in a word
+        Set some bits to 1, leave others unchanged
+    or $t0, $t1, $t2
+        0011 | 1101 = 1111
+
+NOT Operations
+    Useful to invert bits in a word
+        Change 0 to 1, and 1 to 0
+    MIPS has NOR 3-operand instruction
+        a NOR b == NOT (a OR b)
+    nor $t0, $t1, zero
+        ~1101 = 0010
+
+2_4
+Conditional Operations
+    Instructions that would result from if statements, while, for loop, where the control of the condition is from the data
+    beq
+        Branch equal
+            beq rs, rt, L1
+        Takes two operands, check if they're equal.
+            If they are, then jump to L1
+    bne
+        Branch not equal
+            bne rs, rt, L1
+        Takes two operands, check if they're equal.
+            If they are, then jump to L1
+    j
+        Jump
+            j L1
+        Unconditional jump to L1
+    Program counter track what instructions are currently executing in the processor
+        Instructions will change the PC
+            In sequential code, it will increment
+
+Compiling If Statements
+    C code:
+        if (i == j)
+            f = g+h;
+        else
+            f = g-h;
+
+        f, g, ... in $s0, $s1, ...
+    Compiled MIPS code:
+            bne $s3, $s4, Else
+            add $s0, $s1, $s2
+            j   Exit
+    Else:   sub $s0, $s1, $s2
+    Exit:   ...
+
+    Instruction is always 1 byte
+        Instructions need 32 bits to be stored
+            Increment address by 32 to get the next 32-bit instruction
+
+Compiling Loop Statements
+    C code:
+        while (save[i] == k)
+            i += 1;
+
+        i in $s3, k in $s5, address of save in $s6
+    Compiled MIPS code:
+        Loop:   sll  $t1, $s3, 2        # Multiplying s3 by 4 because save is an integer array
+                add  $t1, $t1, $s6      # Adding the offset to the address of save
+                lw   $t0, 0($t1)        # Load the value contained in address that t1 is holding
+                bne  $t0, $s5, Exit     # Checks if value is not equal to k. If yes, jump to Exit
+                addi $s3, $s3, 1        # Increments i by 1
+                j    Loop               # Loops
+        Exit:   ...
+    Similar to if, but the branches is used for exiting the loop
+
+Basic Blocks
+    Sequence of instructions that have no other branches except at the end
+    No targets of branches (no places where a branch might take you) except at the beginning
+    Everything between the start and the end will be executed regardless of control flow and will not execute only if there is an interrupt or an exception
+    A single entry point and a single exit point will allow the compiler to manipulate the code however it wants
+        A compiler identifies basic blocks for optimization
+        An advanced process can accelerate the execution of these basic blocks
+    Hyperblocks
+        More sophisticated uses like predication and combining blocks
+        More optimization
+
+More Conditional Operations
+    Set result to 1 if a condition is true
+        R-format instruction: slt (set less than)
+            slt rd, rs, rt
+                if (rs < rt) rd = 1; else rd = 0;
+            slti rt, rs, constant
+                if (rs < constnat) rt = 1; else rt = 0;
+    This is used in combination with beq and bne
+        slt $t0, $s1, $s2       # if (s1 < s2)
+        bne $t0, $zero, L       # branch to L
+
+Branch Instruction Design
+    Why not blt, bge, etc?
+        Hardware for <, >=, ... slower than =, !=
+            Combining with branch involves more work per instruction, requiring a slower clock
+            No reason to impact the pipeline with that complexity
+                More simple instructions compared to having less complex instructions
+    beq and bne are the common case
+    This is a fundamental design compromise
+    MIPS code that contains blt or bge are pseudo instructions -> will be translated
+
+Signed vs. Unsigned
+    Signed comparison: slt, slti
+    Unsigned comparison: sltu, sltui
+    Example
+        $s0 = 1111 1111 .... 1111
+        $s1 = 0000 0000 .... 0000
+        slt $t0, $s0, $s1       # signed
+            -1 < +1 => $t0 = 1
+        sltu $t0, $s0, $s1      # unsigned
+            +4,294,967,295 > +1 => $t0 = 0
+
+2_5
+Procedure Calling
+    Particular type of branch
+    Unconditional
+        Branches will always be taken but where
+    Steps required:
+        1. Parameters will be placed in registers
+            Maybe some in memory if no more registers
+        2. Transfer control to procedure
+            Change the program counter
+        3. Acquire storage for procedure
+            Adding another stack frame, increasing storage allocation
+        4. Perform procedure's operations
+            May involved additional procedure calling or memory manipulation
+        5. Place result in register
+        6. Return to place of call
+
+Register Usage
+    $a0-$a3: arguments (reg's 4-7)
+    $v0, $v1: result values (reg's 2 and 3)
+    $t0-$t9: temporaries
+        Can be overwritten by callee
+    $s0-$s7: saved
+        Must be saved/restored by callee
+    $gp: global pointer for static data (reg 28)
+    $sp: stack pointer (reg 29)
+    $fp: frame pointer (reg 30)
+    $ra: return address (reg 31) ---> most important!
+
+Procedure Call Instructions
+    Procedure call: jump and link
+        jal ProcedureLabel
+            Changes the PC to location of procedure call
+            Takes address of following instruction and placed in $ra
+                Once it's done, it will jump to target address
+    Procedure return: jump register
+        jr is not only used for for jump to return address
+        jr $ra
+            Changes the PC to $ra
+            Can also be used for computed jumps 
+                for case/switch statements
+
+Leaf Procedure Example
+    C code:
+        int leaf_example (int g, h, i, j) {
+            int f;
+            f = (g+h)-(i+j);
+            return f;
+        }
+
+    Arguments g, ..., j, in $a0, ..., $a3 -> Arguments
+    f will be stored in $s0 (hence, need to save $s0 on stack to restore later)
+    Result in $v0 -> Return value
+
+    MIPS code:
+        addi    $sp, $sp, -4        # Save $s0 on stack
+        sw      $s0, 0($sp)
+        add     $t0, $a0, $a1       # Procedure body
+        add     $t1, $a2, $a3
+        sub     $s0, $t0, $t1
+        add     $v0, $s0, $zero     # Result
+        lw      $s0, 0($sp)         # Restore $s0
+        addi    $sp, $sp, 4
+        jr      $ra                 # Return
+
+Non-Leaf Procedures
+    Procedures that call other procedures
+    Caller needs to save on the stack
+        Return address
+        Arguments and temporaries needed after the call
+    Restore from stack
+
+Non-Leaf Procedure Example
+    C code:
+        int fact (int n) {
+            if (n < 1)
+                return f;
+            else
+                return n * fact(n-1);
+        }
+    Argument n in $a0
+    Result in $vo
+
+2_6
+Memory Layout
+    Reserved
+    Text: program code
+    Static data: global variables
+    Dynamic data: heap
+        Malloc calls
+        New calls in java
+    Stack: automatic storage
+
+32-bit Constants
+    Most constants are small
+        16-bit immediate is sufficient
+    32-bit constant, we have to use 2 instructions.
+        lui rt, constant
+            Copies 16-bit constant to left 16 bits of rt
+            Clears right 16 bits of rt to 0
+        lui -> load upper immediate
+            different than the usual lw (load word)
+        ori -> setting the immediate into the lower part of the 32-bits
+
+Branch Addressing
+    Use I-type format
+    Branch instructions specify
+        Opcode, two registers, target address
+    Most branch targets are near branch
+        Forward/Backward
+            op  rs  rt  constant or address
+            6 bits  5 bits  5 bits  16 bits
+    PC-relative addressing
+        Target address = PC+offset*4
+        PC already incremented by 4 by this time
+            Offset is multiplied by 4 because we know the branch addressing is always at a 32-bit granularity
+
+Jump Addressing
+    Use J-type format
+        6 bit opcode and then 26 bit immediate
+    Jump (j and jal) targets could be anywhere in the text segment
+        Encode full address in instruction
+    Pseudo direct jump addressing
+        Target address = PC_31...28:(address*4)
+
+Target addressing example
+    Loop code from earlier example
+        Assume Loop at location 80000
+
+    Loop: sll   $t1, $s3, 2
+          add   $t1, $t1, $6
+          lw    $t0, 0($t1)
+          bne   $t0, $s5, Exit
+          addi  $s3, $s3, 1
+          j     Loop
+    Exit: ...
+
+    bne instruction (80012):
+        5 8 21 2
+    2 -> defines Exit (80024)
+    80012+4 (PC_new = PC+4) + 2*4 (offset*4)
+    80016+8 = 80024 -> Exit
+
+    j instruction (80020):
+        2 20000
+    20000*4 (offset*4) = 80000 -> Loop
+
+Branching Far Away
+    If can't get to address by encoding with 16-bit offset, assembler rewrites the code
+    
+    beq     $s0, $s1, L1 (can be converted to)
+    bne     $s0, $s1, L2
+    j       L1
+L2: ...
