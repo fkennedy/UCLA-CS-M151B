@@ -1,0 +1,25 @@
+Given a gate with an output signal O and k input signals I0, I1, I2, ..., Ik:
+DELAY(O) = MAX(DELAY(I0), DELAY(I1),...,DELAY(Ik)) + DELAY(k-input gate).
+
+Propagation Delay: OR gate
+Generate Delay: AND gate
+
+The sum of a 1-bit full adder is implemented as a 3-input XOR gate:
+S_n= (A_n xor B_n xor C_n)
+
+Delay
+    P_i = A_i | B_i
+    G_i = A_i & B_i
+    C_i = G_i-1 + P_i-1*C_i-1
+
+
+    C_1 = G_0 + P_0*C_0
+    C_2 = G_1 + P_1*G_0 + P_1*P_0*C_0
+    C_3 = G_2 + P_2*G_1 + P_2*P_1*G_0 + P_2*P_1*P_0*C_0
+    C_4 = G_3 + P_3*G_2 + P_3*P_2*G_1 + P_3*P_2*P_1*G_0 + P_3*P_2*P_1*P_0*C_0
+    
+    P_α = P_3*P_2*P_1*P_0
+    G_α = G_3 + P_3*G_2 + P_3*P_2*G_1 + P_3*P_2*P_1*G_0
+
+    
+
