@@ -21,5 +21,8 @@ Delay
     P_α = P_3*P_2*P_1*P_0
     G_α = G_3 + P_3*G_2 + P_3*P_2*G_1 + P_3*P_2*P_1*G_0
 
-    
-
+    After mux, add the delay without considering time for fan in delays.
+    Example:
+    Delay of MUX = 4T
+    S_31 = 51T
+    S_31 (after MUX) = 51T + 4T = 55T

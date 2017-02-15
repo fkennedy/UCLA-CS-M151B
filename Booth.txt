@@ -1,0 +1,21 @@
+Booth's Algorithm
+
+length(x) is the number of bits used to represent x
+length(y) is the number of bits used to represent y
+
+1. Given 2 numbers x and y (represented in two's complement), we defined 3 numbers, all with length = length(x) + length(y) + 1
+    1. A = [bits of x] [length(y)+1 zeroes]
+    2. B = [bits of -x] [length(y)+1 zeroes]
+    3. C = [length(x) zeroes] [bits of y] [0]
+2. Repeat the following length(y) times:
+    1. Let z = the two right-most bits of C
+    2. Check z. If z =
+        1. 01, then C = C+A
+        2. 10, then C = C+B
+        3. 00, then C stays the same
+        4. 11, then C stays the same
+    3. Shift C once to the right
+3. Drop the right-most bit of C
+4. C is now the product of x and y (in two's complement) and will have length(x)+length(y) bits
+
+However, I neglected to sign extend C when shifting it at the end of step 2. Make sure to do this (e.g. if the left-most bit of C before the shift is 1, append a 1 at the end instead of a 0 after shifting).
