@@ -1,0 +1,46 @@
+4_4
+Single Cycle Datapath Pipelining
+
+Performance Issues
+    Longest delay determines the clock period
+        Critical path is the load instruction
+        Instruction memory > Read operands from register file > Computing the effective address in the ALU > To accessing the data memory > Writing to the register file
+    Not feasible to vary period for different instructions
+    We need to make the common case fast
+        Violates design principle if not
+    Pipelining will improve performance!
+        Keep the clock period small
+        Keep CPI as close to 1 as possible
+
+Pipelining Analogy
+    Overlapping execution
+        Parallelism improves performance
+    Example:
+        We have 4 tasks
+            Washing
+            Drying
+            Folding
+            Storing
+        We have 4 loads
+        Let's say each task takes 1/2 hour
+        If we start at 6pm, and we don't work on each load in parallel
+            It'll take us 2 hours on each load, and we'll work up to 2am
+        However, if we use pipelining, while working on the next task, we can work on the previous task
+            If we start at 6pm
+                It'll take us 2 hours for the first load, and additional 1/2 hour each for the next three loads
+            Overlap tasks that use different resources
+
+MIPS Pipeline
+    Five stages, one step per stage
+        1. IF : Instruction fetch from memory
+            Grabbing instruction from memory
+        2. ID : Instruction decode & register read
+        3. EX : Execute operation or calculate address
+            Calculate effective address in ALU
+        4. MEM: Access memory operand
+            Load/Store memory
+        5. WB : Write result back to register
+
+Execution in a Pipelined Datapath
+    Basically similar to the analogy, but with task::stage
+    Steady state is when all the resources are working on a stage
