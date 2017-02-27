@@ -1,5 +1,4 @@
-Chapter 1 - Computer Abstractions and Technology
-
+Week 1
 1_3
 Defining Performance
     We're always considering the performance bound

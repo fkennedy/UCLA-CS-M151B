@@ -1,0 +1,102 @@
+Week 5
+4_6
+Pipeline Operation
+    Cycle-by-cycle flow of instructions through the pipelined datapath
+        "Single-clock-cycle" pipeline diagram
+            Shows pipeline usage in a single cycle
+            Highlight resources used
+        Multi-clock-cycle diagram
+            Graph of operation over time
+
+IF for Load, Store,
+    Read out PC of the instruction
+    Grab the instruction from memory
+        Place in the IF/ID latch
+    Increment PC by 4
+        Place PC+4 in the IF/ID latch
+
+ID for Load, Store
+    Reads out the IF/ID latches to grab read register data from the register file
+        Latches those values to the ID/EX stage
+    16-bit immediate will be sign extended
+        Latched to the ID/EX stage
+    PC+4 is also latched the ID/EX stage
+    
+    4 values in the ID/EX stage
+        PC+4
+        Sign-extended immediate (16->32)
+        R[rs]
+        R[rt]
+
+EX for Load
+    Execution stage will take PC+4 value, adding it to the left-shifted of the immediate
+        Place result in EX/MEM
+    Load word instruction will grab the register value and that will be propagated to the ALU
+    MUX will get the sign-extended immediate and putting it into the b-port of the ALU
+    Load instruction, add operands in the ALU together
+        Results are placed in the EX/MEM latch
+
+MEM for Load
+    Taking address (result of ALU) and placing it in to the Data memory block (address port)
+    Asserting MEMREAD
+        Take the data that is in the memory and place in the MEM/WB latch
+    Value computed in the ALU is latched at the MEM/WB latch (Load doesn't need it)
+
+WB for Load
+    Load takes the value that was grabbed from the memory and it uses that as the entry to the write data part of the register file
+    Write register port is getting the register number for the instruction whose result/intermediate data is currently stored in the IF/ID latch
+        Load word is the instruction that is currently in the MEM/WB latch
+        We didn't propagate the right register specifier from the load word instruction
+        Anything that you want to use in the later stages has to be propagated along with the instruction
+
+Corrected Datapath for Load
+    Which register we're going to write back to will have to be latched over through the stages until MEM/WB and it will go back to the write register port
+        R[rd] for R-format instructions
+
+EX for Store
+    Register for rs/rt will be stored in the EX/MEM latch
+
+MEM for Store
+    Writing data into memory
+    Take rs/rt values in the write data port
+    Will write in memory with the MEMWRITE signal
+
+WB for Store
+    None
+
+4_7
+Multi-Cycle Pipeline Diagram
+    Form showing resource usage
+        Shows clock cycles (x-axis)
+            Ascending order - increasing clock cycles
+        Shows program exection order (y-axis)
+            Decending order - program exection order
+        Cycle 5 - 1 instruction per stage
+            All stages are occupied
+        Useful to identify hazards
+            Clarifies what point the register values would not be ready for the instruction that is dependent on another instruction
+
+    Traditional form
+        Equivalent but no use of block drawings
+
+Single-Cycle Pipeline diagram
+    State of pipeline in a given cycle
+        Full pipeline diagram with instructions along the horizontal axis
+        Youngest instruction: Instruction fetch
+        Oldest instruction: Write-back
+    Useful to find out where instructions are in the pipe
+    Closer granularity
+
+Pipelined Control (Simplified)
+    Control inputs is identical for the single-cycle datapath
+        ALUOp, RegWrite, RegDst, etc.
+
+Pipelined Control
+    IF/ID stage is where we get the actual instructions
+        Goes through same main control unit
+            Dumping out all control signals
+        Will see these signals in the latch
+            Unlike single-cycle datapath control signals, they are clustered and separated into EX/MEM/WB
+                EX control signals are used in EX stage
+                MEM control signals are used in MEM stage
+                WB control signals are used in WB stage

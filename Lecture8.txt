@@ -1,3 +1,4 @@
+Week 5
 4_4
 Single Cycle Datapath Pipelining
 
@@ -44,3 +45,70 @@ MIPS Pipeline
 Execution in a Pipelined Datapath
     Basically similar to the analogy, but with task::stage
     Steady state is when all the resources are working on a stage
+
+
+4_5
+Pipeline Performance
+    The goal of pipelining is to reduce the clock cycle time
+    Assume time for stages is
+        100ps for register read or write
+        200ps for other stages
+    Compare pipelined data path with single-cycle data path
+        Instruction:
+            lw : 200+100+200+200+100 = 800
+            sw : 200+100+200+200+0   = 700
+            R  : 200+100+200+0  +100 = 600
+            beq: 200+100+200+0  +0   = 500
+
+    Example: We’re loading 3 instructions
+        Without pipelining, in a single cycle data path each instruction would take 800ps to complete
+        For the pipelined data path,
+            The stages themselves would set the cycle time
+                200ps for an instruction fetch
+                200ps for the next instruction fetch
+                    Halfway through this instruction fetch, it takes 100ps to read from registers
+            Longest latency for the cycle time: 200ps (Maximal stage latency of the pipeline)
+            Considerable drop but we’ll be paying in complexity
+
+Pipeline Speedup
+    We want to know how well the balanced is the pipelined stages
+        Break stage into 2 stages, 95% and 5%, there’s no balance
+            There’s no speedup
+            Speedup is affected by increased throughput
+                Latency (time for each instruction) is not decreased
+        If break even, we can get the full speedup by dividing the latency by the number of stages
+            i.e. all take the same time
+            Time between instructions_pipelined = Time between instructions_nonpipelined / Number of stages
+
+Mixed Instructions in the Pipeline
+    Add instruction doesn't need to go into data memory
+    Load word will be executed in 5 cycles
+    Add will be executed in 4 cycles
+    Conflict at the last stage
+        After load is done executing in data memory, it goes to registers
+        After add is done executing in ALU, it goes to registers
+    Need regulation when sharing the pipeline
+        Increase resources
+
+Pipelining and ISA Design
+    ISA that's relatively simple
+        RISC much easier to pipeline than CISC
+    MIPS is designed for pipelining
+        All instructions are the same length
+            Easier to fetch and decode in one cycle
+        Few instruction formats
+            Can decode and read registers in one step
+        Load/store addressing
+            Simpler because we can calculate the address early on (in 3rd stage) then access memory in 4th stage
+        Alignment of memory operands
+            Memory access takes only one cycle
+
+Pipeline Principles
+    Force any instructions that share a pipeline must have the same stages in the same order. Therefore,
+        add does nothing during Mem stage
+        sw does nothing during WB stage
+        Will be a placeholder for the instruction so it doesn't conflict
+    All intermediate values must be latched each cycle
+        Ensure that instructions that are one after another don't interfere with each other's signals
+    Pipelining impedes block reuse, need to have independent stages for block reuse
+        Example: we need 2 adders and ALU

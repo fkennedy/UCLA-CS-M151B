@@ -1,3 +1,4 @@
+Week 3
 Chapter 3: Arithmetic for Computers
 
 3_1
