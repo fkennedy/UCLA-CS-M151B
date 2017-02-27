@@ -1,3 +1,212 @@
 Week 6
 4_8
 Hazards
+    Performance will drop
+    CPI will be above 1.0 in the ideal case
+    Three types of hazards:
+        Data hazards
+            Data is incorrect
+        Control hazards
+            Control is incorrect
+        Structure hazards
+            Resource utilization that won't work out
+
+Example of Data Hazard
+    add $3, $10, $11
+        R[10] = 20
+        R[11] = 22
+        R[3]  = 6
+        This should add 20+22, putting result 42 into $3
+            Takes register values in R[10] and R[11] and put it into R[3]
+    lw  $8, 50($3)
+        This should load memory location R[3] added 50 into R[8]
+    sub $11, $8, $7
+        R[7] = 14
+        This should subtract 14 from that just-loaded value
+            Takes register values in R[8] and R[7] and put it into R[11]
+    These 3 instructions are considered in a straight-lined chain dependencies
+        Load word uses register value from add
+        Subtract uses register value from load word
+        Instructions uses register value from previous instructions
+
+    The Pipeline in Execution:
+        IF:  sub $11, $8, $7
+        ID:  lw  $8, 50($3)
+        EX:  add $3, $10, $11
+        MEM: none
+        WB:  none
+        HAZARD:
+            At ID stage, R[3] should have been "42", but instead it's still 6.
+                It wasn't updated yet because add is still in execution
+
+        IF:  add $10, $1, $2
+        ID:  sub $11, $8, $7
+        EX:  lw  $8, 50($3)
+        MEM: add $3, $10, $11
+        WB:  none
+        HAZARD:
+            At ID stage, R[8] should have been a value loaded from M[92] but instead it's still loading from M[16]
+                It wasn't updated yet because lw is still in execution
+
+        One instruction that depends on another instruction reads an incorrect data value because it hasn't been written
+
+Hazard (continued)
+    Situations that prevent starting the next instruction in the next cycle
+    Structure hazards
+        A required resource is busy
+            Multiple instructions going through a pipeline at the same time 
+            Both instructions need to make a use of the data port memory
+            But we only have a single data port
+            One instruction has to wait for one another
+    Data hazard
+        Need to wait for previous instruction to compete its data read/write
+    Control hazard
+        Deciding on control action depends on previous instruction
+            Wait on a branch to resolve to know what our current PC should be
+
+Structure Hazards
+    Conflict for use of a resource
+    In MIPS pipeline with a single memory
+        Load/store requires data access
+        Instruction fetch would have to stall for that cycle
+            Would cause a pipeline "bubble"
+                An opening in the pipeline
+                    There are instructions that are not running while instructions before it are running ahead
+                    This leaves a gap, which is essentially a "bubble"
+                More "bubbles" will result in CPI >> 1
+    Hence, pipelined datapaths require separate instruction/data memories
+        Or separate instruction/data caches
+
+Data Hazards
+    An instruction depends on completion of data access by a previous instruction
+    Have a different number of solutions
+    Example:
+        Code:
+            add $s0, $t0, $t1
+            sub $t2, $s0, $t3
+        First, add instruction that writes to s0
+        Then, sub instruction that reads from s0
+        Stall the sub instruction with bubbles
+
+    When a result is needed in the pipeline before it is available, a "data hazard" occurs
+    Example:
+        Code:
+            sub  $2, $1, $3     [1]
+            and $12, $2, $5     [2]
+            or  $13, $6, $2     [3]
+            and $14, $2, $2     [4]
+            sw  $15, 100($2)    [5]
+        R[2] is needed at the ID stage of the next instruction(s)
+        R[2] is only available for the next instruction to use after the WB stage
+            If [1] goes through the five stages, it means that R[2] is only available at Clock Cycle 5
+
+        [5] isn't a problem
+        [4] also isn't a problem
+        [2] and [3] is going to have a problem
+
+4_9
+Dealing with Data Hazards
+    Two ways:
+        Software
+            Insert independent instructions (or no-ops)
+        Hardware
+            Insert bubbles (i.e. stall the pipeline)
+            Data forwarding
+
+Dealing with Data Hazards in Software
+    Software solutions, hardware will always expect there are no data hazards
+        Big burden on software
+        Ruins portability of software
+        Machines with the same ISA may have different pipelines
+        Two cycles of hazards to handle if there are back-to-back instructions
+        Pipeline may have 3-4 or more, software should be aware
+            Not favorable design
+            Need for transparency
+            Machine implementation in the life of portability
+        Much easier to add software complexity than hardware
+
+    Example:
+        Code:
+            sub  $2, $1, $3     [1]
+            nop
+            nop
+            and $12, $2, $5     [2]
+        Pipeline Diagram:
+                    1   2   3   4   5   6   7   8
+            sub     IF  ID  EX  MEM WB
+            nop         IF  ID  EX  MEM WB
+            nop             IF  ID  EX  MEM WB
+            add                 IF  ID  EX  MEM WB
+        We insert enough no-ops (or other instructions that don't use register 2) so that data hazard doesn't occur
+    nop example: shift left 0
+    Cycle Time isn't impacted
+    Execution Time is longer
+        CPI is increased
+
+Code Scheduling to Avoid Stalls
+    Reorder code to avoid use of load result in the next instruction
+    C code:
+        A = B + E;
+        C = B + F;
+
+        A: 12($t0)
+        B:  0($t0)
+        C: 16($t0)
+        E:  4($t0)
+        F:  8($t0)
+    MIPS Before:
+        lw  $t1, 0($t0)
+        lw  $t2, 4($t0)
+        STALL
+        add $t3, $t1, $t2
+        sw  $t3, 12($t0)
+        lw  $t4, 8($t0)
+        STALL
+        add $t5, $t1, $t4
+        sw  $t5, 16($t0)
+        13 cycles
+    MIPS After:
+        lw  $t1, 0($t0)
+        lw  $t2, 4($t0)
+        lw  $t4, 8($t0)
+        add $t3, $t1, $t2
+        sw  $t3, 12($t0)
+        add $t5, $t1, $t4
+        sw  $t5, 16($t0)
+        11 cycles
+    This is essentially the same as using a no-ops instruction, but instead of an instruction that does nothing, it uses other MIPS instructions instead
+
+Handling Data Hazards in Hardware
+    Stall the pipeline
+        Make a bubble in the next instruction and continue once the previous instruction has completed the WB stage
+        Once we stall one of the stages in an instruction, the other instructinos are also stalled
+            An instruction will not enter the IF stage if the previous instruction has not entered the ID stage
+    Tradeoffs:
+        *IN CLASS*
+    More complicated example
+        3 different register dependencies
+            Gray: R[2]
+            Red: R[12]
+            Green: R[14]
+
+Pipeline Stalls
+    To insure proper pipeline execution in light of register dependecies, we must:
+        Detect the hazard
+        Stall the pipeline
+            Prevent the IF and ID stages from making progress
+                The ID stage because we can't go on until the dependent instruction complete correctly
+                The IF stage because we do not want to lose any instructions
+
+Stalling the Pipeline
+    Prevent the IF and ID stages from proceeding
+        Don't write the PC (PCWrite = 0)
+        Don't rewrite the IF/ID register (IF/IDWrite = 0)
+    Insert "nops"
+        Set all control signals propagating to EX/MEM/WB to zero
+            It becomes a nop (it's not a branch)
+                It doesn't execute anything
+                It doesn't read from memory
+                It doesn't write anything
+
+4_10
+4_11
