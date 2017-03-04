@@ -1,0 +1,108 @@
+Week 7 - Wednesday
+4_12
+Stalls and Performance
+THE BIG PICTURE
+    Mechanisms to correct hazards through hardware
+        Stalls
+            Reduce performance
+            Maintain correctness
+    Compiler can arrange code to avoid hazards and stalls
+        Hurts portability
+            Must know the hardware infrastructure beyond the ISA
+            Understand the pipeline structure
+    Will talk about advantages of using hardware stalls or compilers
+        Static vs dynamic optimization
+            Static - know what to do when there are hazards
+            Dynamic - works according to the situation
+
+Control Hazards
+    Arise because we have changes in control flow due to instructions
+        Branches
+        Jumps
+        Procedural calls
+    These all change the actual PC which changes the flow of control of the program
+        Fetching next instruction depends on branch outcome
+        Pipeline can't always fetch correct instruction
+            Still working on ID stage of the branch
+    In MIPS pipeline
+        Need to compare registers and compute target early in the pipeline
+        Add hardware to do it in the ID stage
+
+Dealing With Branch Hazards
+    Both hardware solutions and software solutions
+    Hardware
+        Just wait
+            Stall until you know which direction branch goes
+                Exposing the pipeline in depth, reducing performance by increasing CPI
+            Allow pipeline to continue
+        Make a prediction
+            Guess which direction
+            Then start executing chosen path
+                If it's right, you break dependencies
+            (be prepared to undo any mistakes!)
+                Penalty has two parts
+                    How often you are wrong
+                    How big of a penalty when you see you are wrong
+            Penalty for stalling is fixed
+            Penalty for making predictions can be none but can also be larger than stalling
+                Predictions are useful when you have a reasonable accuracy
+            Two types of prediction
+                Static: guess on instruction type
+                Dynamic: guess on execution history
+            Prediction is more powerful
+        Reduce the branch delay
+            Difficult to reduce in the processor once we settle on a pipe depth
+
+Stall on Branch
+    Wait until branch outcome determined before fetching next instruction
+        Once branch is resolved, instruction fetch can continue
+    Problem:
+        With every branch, you have to do a stall
+            Large penalty
+                Gets complicated with a more complex pipeline with multiple stages of fetch and multiple stages of decode
+
+Branch Prediction
+    More realistic and more dynamically-scheduled
+    Longer pipelines can't readily determine branch outcome early
+        Stall penalty becomes unacceptable
+    Predict outcome of branch
+        Only stall if prediction is wrong
+            This is so that we can correct our mistakes
+    How it works
+        Guess which way it's going to go
+            Continue to fetch down the path you get and assume you're correct
+            If wrong, fix things up
+    In MIPS pipeline
+        Start with static prediction
+            Predict branches not taken
+                Use PC+4 as the next address
+        Fetch instruction after branch, no delay
+
+MIPS with Predict Not Taken
+    Prediction correct:
+        add $4, $5, $6
+        beq $1, $2, 40
+        lw  $3, 300($0)
+
+    Prediction incorrect:
+        add $4, $5, $6
+        beq $1, $2, 40
+        STALL
+        or  $7, $8, $9
+
+More-Realistic Branch Prediction
+    While Predict Not Taken is a good mechanism, if assume branches taken 50% of the time and not taken 50% of the time, we'll be wrong 50% of the time
+    Get another strategy
+        Static branch prediction
+            Based on more sophisticated things like a forward branch or a backward branch
+            If statement - forward branch
+            Loop statements - backward branch
+                Predict backward branches taken
+                Predict forward branches not taken
+        Dynamic branch prediction
+            Maintain extra hardware structures
+                Usually tables
+                Indexed with PC of the branch
+            Figure out whether the branch will be taken or not by the actual branch behavior
+4_13
+4_14

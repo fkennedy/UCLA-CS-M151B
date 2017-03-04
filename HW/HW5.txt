@@ -1,0 +1,84 @@
+4.13
+4.13.1
+    5-stages datapath:
+        IF  - Instruction Fetch
+        ID  - Instruction Decode
+        EX  - Execute Operation/Calculate Address
+        MEM - Access Memory
+        WB  - Write to Register
+    
+    1   2   3   4   5   6   7   8   9   10  11  12  13  14
+    IF  ID  EX  MEM WB
+        IF  ID  NOP NOP EX  MEM WB
+            IF  NOP NOP ID  EX  MEM WB
+                        IF  ID  NOP EX  MEM WB
+                            IF  NOP ID  NOP NOP EX  MEM WB
+
+    In the first line of code, we have to write back in the register r5
+    In the second line of code, we have to write back in the register r3
+    In the third line of code, there is no conflict/hazard
+    In the fourth line of code, r3 is the source but it isn't available until the write back from the second line of code is done
+    In the fifth line of code r3 is the source but it isn't available until the write back from the fourth line of code is done
+
+    Therefore, the code will look like:
+        add r5, r2, r1
+        NOP
+        NOP
+        lw  r3, 4(r5)
+        lw  r2, 0(r2)
+        NOP
+        or  r3, r5, r3
+        NOP
+        NOP
+        sw  r3, 0(r5)
+
+    It will take us 14 cycles to complete
+
+4.14
+4.14.1
+    5-stages datapath:
+        IF  - Instruction Fetch
+        ID  - Instruction Decode
+        EX  - Execute Operation/Calculate Address
+        MEM - Access Memory
+        WB  - Write to Register
+
+        1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18
+    LW  IF  ID  EX  MEM WB   
+    BEQ         IF  ID  EX  MEM WB
+    SW                  IF
+    LW                      IF  ID  EX  MEM WB
+    BEQ                             IF  ID  EX  MEM WB
+    LW                                      IF  ID  EX  MEM WB
+    BEQ                                             IF  ID  EX  MEM WB
+    SW                                                      IF  ID  EX  MEM WB
+
+    18 cycles
+
+4.16
+4.16.1
+    Always-taken
+        Actual:   T, NT, T, T, NT
+        Predict:  T,  T, T, T,  T
+        Correct:  1,  0, 1, 1,  0
+        Accuracy: 3/5 = 60%
+
+    Always-not-taken
+        Actual:    T, NT,  T,  T, NT
+        Predict:  NT, NT, NT, NT, NT
+        Correct:   0,  1,  0,  0,  1
+        Accuracy: 2/5 = 40%
+
+4.16.2
+    Actual:     T, NT,  T,  T
+    Predicted: NT, NT, NT, NT
+    Correct:    0,  1,  0,  0
+    Accuracy: 1/4 = 25%
+
+4.16.3
+    Actual:   T, NT,  T,  T, NT,  T, NT,  T, T, NT, T, NT, T, T, NT 
+    Predict: NT, NT, NT, NT,  T, NT,  T, NT, T,  T, T,  T, T, T,  T
+    Correct:  0,  1,  0,  0,  0,  0,  1,  0, 1,  0, 1,  0, 1, 1,  1, 
+    
+    With future iterations, the branch predictor will keep on predicting always-taken.
+    Therefore, its accuracy will be the same as Always-taken: 60%

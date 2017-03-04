@@ -1,0 +1,39 @@
+G_0 = a_0*b_0 = 2T
+
+P_0 = a_0(+)b_0 = 2T
+
+G_alpha = G_3+G_2*P_3+G_1*P_2*P_3+G_0*P_1*P_2*P_3 = 5T+2T+5T = 12T
+
+P_alpha = P_0*P_1*P_2*P_3 = 2T+5T = 7T
+
+C_12 = G_gamma+G_beta*P_gamma+G_alpha*P_beta*P_gamma+C_0*P_alpha*P_beta*P_gamma = 12T+3T+5T = 20T
+
+C_15 = G_14+G_13*P_14+G_12*P_13*P_14+C_12*P_12*P_13*P_14 = 20T+5T+5T = 30T
+
+C_16 = G_sigma+G_gamma*P_sigma+G_beta*P_gamma*P_sigma+G_alpha*P_beta*P_gamma*P_sigma+C_0*P_alpha*P_beta*P_gamma*P_sigma = 12T+5T+7T = 24T
+
+S_15 = (a_15(+)b_15)(+)C_15 = 30T+2T = 32T
+
+C_20 = G_19+G_18*P_19+G_17*P_18*P_19+G_16*P_17*P_18*P_19+(1|0)*P_16*P_17*P_18*P_19 = 7T+2T+7T = 16T
+
+S_19 = (a_19(+)b_19)(+)C_19:
+    C_19 = G_18+G_17*P_18+G_16*P_17*P_18+(1|0)*P_16*P_17*P_18
+    C_19 = 5T+2T+5T
+    C_19 = 12T
+    S_19 = 12T+2T = 14T
+
+C_24 = G_23+G_22*P_23+G_21*P_22*P_23+G_20*P_21*P_22*P_23+C_20*P_20*P_21*P_22*P_23 = 16T+7T+7T = 30T
+
+C_31 = G_30+G_29*P_30+G_28*P_29*P_30+C_28*P_28*P_29*P_30
+    C_28 = G_27+G_26*P_27+G_25*P_26*P_27+G_24*P_25*P_26*P_27+C_24*P_24*P_25*P_26*P_27
+    C_28 = 30T+7T+7T
+    C_28 = 44T
+    C_31 = 44T+5T+5T = 54T
+
+C_32 (after MUX) = G_31+G_30*P_31+G_29*P_30*P_31+G_28*P_29*P_30*P_31+C_28*P_28*P_29*P_30*P_31 == 44T+7T+7T+4T = 62T
+
+S_31 (after MUX) = max(C_16+4T,(a_31(+)b_31)(+)C_31)+4T
+                 = max(28T, (54T+2T+4T))
+                 = 60T
+
+Max Delay = 62T

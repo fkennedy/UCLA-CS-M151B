@@ -1,0 +1,115 @@
+1.5
+a)
+    P1: 3GHz/1.5 = 2*10^9 instructions per second
+    P2: 2.5GHz/1.0 = 2.5*10^9 instructions per second
+    P3: 4.0GHz/2.2 = 1.82*10^9 instructions per second
+
+    Therefore, P2 has the highest performance expressed in instructions per second.
+
+b)
+    Number of cycles
+        P1: 3GHz*10s = 3*10^10 cycles
+        P2: 2.5GHz*10s = 2.5*10^10 cycles
+        P3: 4.0GHz*10s = 4.0*10^10 cycles
+
+    Number of instructions
+        P1: 2*10^9*10 = 2*10^10 instructions
+        P2: 2.5*10^9*10 = 2.5*10^10 instructions
+        P3: 1.82*10^9*10 = 1.82*10^10 instructions
+
+c)
+    ET = IC*CPI/CR
+    CR = IC*CPI/ET
+    0.7ET = IC*1.2*CPI/CR_new
+    CR_new = IC*CPI*1.71/ET
+           = (IC*CPI/ET)*1.71
+           = CR*1.71
+
+    New clock rate
+        P1: 3*1.71 = 5.13GHz
+        P2: 2.5*1.71 = 4.28GHz
+        P3: 4.0*1.71 = 6.84GHz
+
+1.6
+    P1
+        CT = 1/CR
+           = 1/(2.5*10^9)
+           = 400ps
+        ET = IC*CPI*CT
+           = 1*10^6*(1*0.1+2*0.2+3*0.5+3*0.2)*400*10^-12
+           = 1.04*10^-4 seconds
+
+    P2
+        CT = 1/CR
+           = 1/(3.0*10^9)
+           = 333ps
+        ET = IC*CPI*CT
+           = 1*10^6*2*333*10^-12
+           = 6.66*10^-5 seconds
+
+    P2 is faster
+
+a)
+    Global CPI
+        P1: 1*0.1+2*0.2+3*0.5+3*0.2 = 2.6
+        P2: 2
+
+b)
+    P1: 1*10^6*2.6 = 2.6*10^6 cycles
+    P2: 1*10^6*2.0 = 2.0*10^6 cycles
+
+
+1.7
+a)  
+    ET = IC*CPI*CT
+
+    Compiler A
+        1.1 = 1*10^9*CPI*1*10^-9
+        CPI = 1.1
+
+    Compiler B
+        1.5 = 1.2*10^9*CPI*1*10^-9
+        1.2*CPI = 1.5
+        CPI = 1.25
+
+b)
+    ET = IC*CPI/CR
+    CR = IC*CPI/ET
+    
+    For same ET
+        CR_B/CR_A = (IC_B*CPI_B)/(IC_A*CPI_A)
+                  = (1.2*10^9*1.25)/(1*10^9*1.1)
+                  = 1.37
+
+    Compiler B is 1.37 times faster than Compiler A
+
+c)
+    For same CR/CT
+
+        ET_A/ET_New = (IC_A*CPI_A)/(IC_New*CPI_New)
+                    = (1.0*10^9*1.1)/(6.0*10^8*1.1)
+                    = 1.67
+
+        ET_B/ET_New = (IC_B*CPI_B)/(IC_New*CPI_New)
+                    = (1.2*10^9*1.25)/(6.0*10^8*1.1)
+                    = 2.27
+
+1.13
+1.13.1 
+    0.2*70s = 14s
+    14s/250s*100% = 5.6%
+
+1.13.2
+    70s+40s+85s = 195s
+    INT = 250s-195s
+        = 55s
+    250s*0.8 = 200s
+
+    70+40+85+55x = 200
+    55x = 5
+    x = 1/11
+      = 9.09%
+    Therefore, INT operations are reduced by 90.9%
+
+1.13.3
+    No because 200 = 40x+210 is incorrect

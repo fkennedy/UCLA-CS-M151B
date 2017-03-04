@@ -1,0 +1,65 @@
+Week 8 - Monday
+4_15
+4_16
+Scheduling Example
+    Schedule this for dual-issue MIPS
+        Loop: lw    $t0, 0($s1)         # $t0 = array element
+              addu  $t0, $t0, $s2       # add scalar in $s2
+              sw    $t0, 0($s1)         # store result
+              addi  $s1, $s1, -4        # decrement pointer
+              bne   $s1, $zero, Loop    # branch $s1 != 0
+
+       ALU/branch           Load/store          cycle
+Loop:  nop                  lw $t0, 0($s1)      1
+       addi $s1, $s1, -4    nop                 2
+       addu $t0, $t0, $s2   nop                 3
+       bne $s1, $zero, Loop sw $t0, 4($s1)      4
+
+    IPC = 5/4 = 1.25 (c.f. peak IPC = 2)
+        5 instructions for 4 cycles
+            Maximum of 2 instructions in 1 cycle
+
+    Dependencies are indicated by green/brown respectively
+    If we look at the compiler perspective, it's going to place it in packets of instructions
+        Each packet = 2 instructions
+        Schedule for different cycles
+        Fill the table below with instructions for 1-4
+            However we wanna fill
+        Observe all pipe hazards that occurred
+            Load-use hazard
+                No way to support addu in the load cycle
+                Load word then addu in the next 2 cycles
+                    So we addi first
+                        [But we have to change the store instruction since we changed the value of $s1 before our intended to]
+                Store word right after the addu because we can use forwarding
+                bne is at the last cycle (together with sw)
+        addi can go anywhere above the bne
+            Even though there is an anti-dependence with the sw, can change the value of the displacement field of the load/store when dealing with an addi instruction
+                Can move it ahead of the store
+                    Known quantity at compiling time
+                Anti-dependence, it's using $s1 which the addi is using too
+                    If I put the addi before the sw, then sw will be storing at a location that is 4 less than it actually has to
+                        Deposit the -4 into displacement for the sw
+                            Compiler can do this because of the fixed increment/decrement of an immediate
+
+Loop Unrolling
+    There is another way to optimize
+    Take a loop body and make multiple copies of the loop bodies to find more parallelism
+        Reduces loop-control overhead
+    Use different registers per replication
+        Called "register renaming"
+        Avoid loop-carried "anti-dependencies"
+            Store followed by a load of the same register
+            Aka "name dependence"
+                Reuse of a register name
+
+    Loop body is: Starting instruction until the instruction before the branch
+
+    We can combine instructions
+        4 addi condensed into 1
+            Replace the sw with displacement offsets
+        4 sets of lw, addu, sw
+            Use different registers
+                $t0, $t1, $t2, $t3
+                
+4_17

@@ -1,0 +1,32 @@
+2.24
+    Though jump can locate to addresses that are 32-bits, it's not possible to jump to an address greater than 28-bits with a single jump instruction.
+    Branch is an I-format instruction and can only handle jumps to 18-bits addresses.
+
+2.26.1
+    $s2 = 2 -> For the first iteration
+    Loop 10 times, therefore $s2 = 20
+
+2.26.3
+    5 instructions for every loop.
+    Will loop N times
+    Additional 2 instructions for post-loop (final slt and beq)
+    Therefore, total is 5N+2 instructions
+
+2.46.1
+    CPI_A = 1
+    CPI_L/S = 10
+    CPI_B = 3
+    
+    IC_A = 5*10^8
+    IC_L/S = 3*10^8
+    IC_B = 1*10^8
+
+    ET = IC*CPI*CT
+    ET = 9*10^8*(5/9*1+3/9*10+1/9*3)*CT
+       = 3.8*10^9*CT
+
+    ET_new = IC_new*CPI*CT_new
+           = 7.75*10^8*(3.75/7.75*1+3/7.75*10+1/7.75*3)*1.1CT
+           = 4.04*10^9*CT
+
+    No this is not a good design choice. The overall execution time is higher.

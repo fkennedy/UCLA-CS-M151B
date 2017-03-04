@@ -1,0 +1,36 @@
+Cycle   1st Issue Slot (ALU/Branch)     2nd Issue Slot (LW/SW)
+1       addi $s0, $s0, 4                lw $t0, 0($s0)
+2       nop                             nop
+3       nop                             lw $t1, 0($t0)
+4       nop                             nop
+5       add $t1, $s1, $t1               nop
+6       bne $s0, $s2, Loop              sw $t1, 0($t0)
+
+1 iteration = 6 cycles
+200 iterations = 1200 cycles
+
+Unroll the loop once:
+lw   $t0, 0($s0)
+lw   $t1, 0($t0)
+add  $t1, $s1, $t1
+sw   $t1, 0($t0)
+
+lw   $t2, 4($s0)
+lw   $t3, 0($t2)
+add  $t3, $s1, $t3
+sw   $t3, 0($t0)
+
+addi $s0, $s0, 8
+bne  $s0, $s2, Loop
+
+Cycle   1st Issue Slot (ALU/Branch)     2nd Issue Slot (LW/SW)
+1       addi $s0, $s0, 8                lw $t0, 0($s0)
+2       nop                             lw $t2, -4($s0)
+3       nop                             lw $t1, 0($t0)
+4       nop                             lw $t3, 0($t2)
+5       add $t1, $s1, $t1               nop
+6       add $t3, $s1, $t3               sw $t1, 0($t0)
+7       bne $s0, $s2, Loop              sw $t3, 0($t0)
+
+1 iteration = 7 cycles
+200 iterations = 1400 cycles

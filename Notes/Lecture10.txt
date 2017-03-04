@@ -209,4 +209,157 @@ Stalling the Pipeline
                 It doesn't write anything
 
 4_10
+Forwarding (aka Bypassing)
+    Use result when it is computed
+        Don't wait for it to be stored in a register
+        Requires extra connections in the datapath
+    Even though we may not have written the value to the register file, the value may be ready at an earlier time than the WB stage
+    Example:
+        Code:
+            add $s0, $t0, $t1
+            sub $t2, $s0, $t3
+        In the program execution, after the EX stage, the value is already ready
+            But it won't be "ready at the register file" by the WB stage
+            Instead, it's ready 2 full cycles early
+        If there are no software nops or other mechanisms to handle hazards, then we would have to use hardware stalls
+            But we can use forwarding
+        In the pipeline diagram, the value of S[0] is ready at EX stage
+            It's not in S[0], but we can communicate the value at the beginning of the add's MEM stage into sub's EX stage
+            If we can communicate, we don't have to use hardware stalls
+                We're forwarding the value from one instruction to another
+
+Data Hazards in ALU Instructions
+    Consider this sequence:
+        sub  $2, $1, $3
+        and $12, $2, $5
+        or  $13, $6, $2
+        add $14, $2, $2
+        sw  $15, 100($2)
+    All these instructions are chain-dependent
+        R[2]
+    Forwarding can solve the data dependencies
+    We can resolve hazards with forwarding
+        How do we detect when to forward?
+
+Dependencies & Forwarding
+    To determine when to forward, use a pipeline diagram to figure out when a certain register is needed and when will it be ready
+        If the value of the register is needed before the WB stage, then we forward
+            Forwarding occurs from the previous stage of the original instruction of when it is depended on
+            In example:
+                After EX of sub, it is passed on to EX of and
+                After MEM of sub, it is passed on to EX of or
+        If not then the value is passed like normal
+    In example:
+        Blue arrow indicates the dependencies
+        Red line indicates the forwarding
+
+Detecting the Need to Forward
+    Pass register numbers along pipeline
+        e.g. ID/EX.RegisterRs = register number for Rs sitting in ID/EX pipeline register
+    Compare register destination from older instructions to the source rs/rt registers for younger instructions
+    ALU operand register numbers in EX stage are given by
+        ID/EX.RegisterRs, ID/EX.RegisterRt
+    Data hazards when:
+        1a. EX/MEM.RegisterRd = ID/EX.RegisterRs
+        1b. EX/MEM.RegisterRd = ID/EX.RegisterRt
+        2a. MEM/WB.RegisterRd = ID/EX.RegisterRs
+        2b. MEM/WB.RegisterRd = ID/EX.RegisterRt
+        
+        #1 - Forward from EX/MEM pipeline register
+        #2 - Forward from MEM/WB pipeline register
+
+        ID/EX  - Will be executed next
+        EX/MEM - Currently executing
+        MEM/WB - Currently being written back
+
+    In addition, we also need to know if the register is being written. We have to check the
+        EX/MEM.RegWrite
+        MEM/WB.RegWrite
+    Avoid forwarding when it's writing to a zero register (it's a no-ops instruction)
+        EX/MEM.RegisterRd != 0
+        MEM/WB.RegisterRd != 0
+
+Forwarding Paths
+    As all the data is passed around, we need to make sure that the right data is used for each registers
+    We create a forwarding unit that connects to 2 MUXs
+        One for rs
+            ForwardA
+        One for rt
+            ForwardB
+    ForwardA and ForwardB are select signals from the forwarding unit and there are 3 cases that rs/rt will get data from
+        1. As usual from the ID/EX latch
+        2. Forwarded from the MEM/WB latch
+        3. Forwarded from the EX/MEM latch
+    Missing from the diagram:
+        RegWrite
+
+Forwarding Conditions
+    EX hazard
+        if (EX/MEM.RegWrite and (EX/MEM.RegisterRd != 0) and (EX/MEM.RegisterRd = ID/EX.RegisterRs))
+            ForwardA = 10
+        if (EX/MEM.RegWrite and (EX/MEM.RegisterRd != 0) and (EX/MEM.RegisterRd = ID/EX.RegisterRt))
+            ForwardB = 10
+    MEM hazard
+        if (MEM/WB.RegWrite and (MEM/WB.RegisterRd != 0) and (MEM/WB.RegisterRd = ID/EX.RegisterRs))
+            ForwardA = 01
+        if (MEM/WB.RegWrite and (MEM/WB.RegisterRd != 0) and (MEM/WB.RegisterRd = ID/EX.RegisterRt))
+            ForwardB = 01
+    No hazard
+        ForwardA = 00
+        ForwardB = 00
+
+Double Data Hazard
+    Consider the sequence:
+        add $1, $1, $2
+        add $1, $1, $3
+        add $1, $1, $4
+    Both hazards occurring
+        Therefore, we want to use the most recent
+    Revise MEM hazard condition
+        Only forward if EX hazard condition isn't true
+
+Forwarding Conditions (Updated)
+    MEM hazard
+        if (MEM/WB.RegWrite and (MEM/WB.RegisterRd != 0) and not (EX/MEM.RegWrite and (EX/MEM.RegisterRd != 0) and (EX/MEM.RegisterRd = ID/EX.RegisterRs))
+            ForwardA = 01
+        if (MEM/WB.RegWrite and (MEM/WB.RegisterRd != 0) and not (EX/MEM.RegWrite and (EX/MEM.RegisterRd != 0 and (EX/MEM.RegisterRd = ID/EX.RegisterRt))
+            ForwardB = 01
+
 4_11
+Load-Use Data Hazard
+    There are some cases where we can't always avoid stalls by forwarding
+        If value isn't computed when needed
+        Can't forward back in time
+    Example will be a load instruction
+        Value isn't ready until after MEM stage
+        In diagram:
+            If there's no bubble, S[0] is needed at the 3rd cycle
+    If we lengthen the cycle time for each instruction, we will lengthen the cycle time for the whole process
+    There is no way to forward the value from the EX stage (because loading is grabbing the value from the memory)
+
+Load-Use Hazard Detection
+    We solve the load-use hazard with a stall
+    Check when using instruction is decoded in ID stage
+    ALU operand register numbers in ID stage are given by
+        IF/ID.RegisterRs, IF/ID.RegisterRt
+    Load-use hazard when
+        ID/EX.MemRead and ((ID/EX.RegisterRt = IF/ID.RegisterRs) or (ID/Ex.RegisterRt = IF/ID.RegisterRt))
+    If detected, stall and insert bubble
+
+How to stall the pipeline
+    Force control values in ID/EX register to 0
+        EX, MEM and WB do nop (no-operation)
+    Prevent update of PC and IF/ID register
+        Using instruction is decoded again
+        Following instruction is fetched again
+        1-cycle stall allows MEM to read data for lw
+            Can subsequently forward to EX stage of next instruction
+
+Datapath with Hazard Detection
+    Hazard detection unit
+        Inputs:
+            ID/EX.MemRead
+        Output:
+            Selector for MUX (to determine whether to insert a bubble or not)
+            IF/IDWrite
+            PCWrite
