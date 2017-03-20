@@ -1,0 +1,20 @@
+Winter 2005 Final
+1.
+    General case
+        Load - stall 2 cycles
+        R-type - stall 1 cycle
+    Forwarding
+        Load - stall 1 cycle
+        R-type - no stall
+    Load value is taken from MEM/WB latch
+    R-type value is taken from EX/MEM latch
+
+2.
+    Page size - determine number of bits in an address  
+        16KB pages = 2^14 bits
+    Offset - number of bits determined by the block size
+        8 byte block size means 3 bits
+    Index - number of bits determined by the number of blocks
+        Cache size / block size / n (-way set))
+    TLB hit or miss - determined by the most significant bits
+        If address given was 16 bits, then TLB hit or miss is determined by the most significant 2 bits

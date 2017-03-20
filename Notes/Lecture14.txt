@@ -1,4 +1,55 @@
 Week 9 - Monday
 5_5
+Multilevel Caches
+    Primary cache attached to CPU
+        Small, but fast
+    L-2 cache services misses from primary cache
+
+Multilevel Cache Example
+    Given
+        BCPI = 1 (no other stalls, no hazards)
+        CR = 4GHz       // CT = 0.25ns
+        Miss rate/instruction = 2%
+        Main Memory Access Time = 100ns
+    With just primary cache
+        Miss penalty = 100ns/0.25ns = 400 cycles
+            Takes 400 cycles if there's a cache miss
+        Effective CPI = 1 + 0.02*400 = 9
+
+Example (cont.)
+    Now add L-2 cache
+        MMAT = 5ns
+        MR = 10%
+    Primary miss with L-2 hit
+        Penalty = 5ns/0.25ns = 20 cycles
+    Primary miss with L-2 miss
+        Extra penalty = 400 cycles
+    CPI = 1+0.02*(20+0.1*400) = 2.2
+    Performance ratio = 9/2.2 = 4.1
+
+Multilevel Cache Considerations
+    Primary cache
+        Focus on minimal hit time
+    L-2 cache
+        Focus on low miss rate to avoid main memory access
+        Hit time has less overall impact
+    Results
+        L-1 cache usually smaller than a single cache
+        L-1 block size smaller than L-2 block size
+
+Interactions with Advanced CPUs
+    Out-of-order CPUs can execut instructions during cache miss
+        Pending stores stays in load/store unit
+        Dependent instructions wait in reservation stations
+            Independent instructions continue
+    Effect of miss depends on program data flow
+        Much harder to analyse
+        Use system simulation
+
+Interactions with Software
+    Misses are dependent on the memory access patterns
+        Algorithm behavior
+        Compiler optimization for memory access
+    
 5_6
 5_7
