@@ -1,5 +1,131 @@
 Week 8 - Monday
 4_15
+Instruction-Level Parallelism (ILP)
+    One approach to improving performance in a microprocessor design
+    Looking for independent instructions within a single thread of execution and trying to execute those in an overlapped manner
+    Pipelining - we are executing multiple instructions in parallel
+        We're trying to find different instructions to push down the pipeline that don't have hazards between them
+        Allowed to be at different stages at different points of time
+    To increase ILP
+        Deeper pipeline
+            Have even longer pipe depth
+            Less work per stage
+            Shorter clock cycle
+            May result in more hazards (there are tradeoffs)
+        Multiple instructions in the same stage (multiple issue)
+            Superscalar or super pipelining
+            If we can replicate some elements of the pipeline, we can have multiple pipelines
+                Have more instructions to flow through at once
+            CPI < 1, so use instructions per cycle (IPC) - inverse of CPI
+            4GHz 4-way multiple-issue
+                16 BIPS, peak CPI = 0.25, peak IPC = 4
+                But dependences reduce in reality
+
+Multiple Issue
+    Number of challenges to be solved
+        Design of hardware to allow simultaneous issue of multiple instructions
+            Need to design IF that can fetch more than one instruction
+            RF that has more ports for larger number of instructions
+        Resource challenge
+    Static multiple issue and dynamic multiple issue
+        Static
+            Compiler is responsible to figure out which instructions are independent that can be issued together
+            Packaged into "issue slots"
+            Compiler detects and avoid hazards
+            Problem:
+                Restricted to a particular type of machine with a particular issue
+                Cannot run on any hardware
+                Have to recompile
+        Dynamic
+            More common in modern computing
+            CPU examines instruction stream and chooses instructions to issue each cycle
+                May be out of order
+                    Adds complexity
+                        Find ways to ensure precise exceptions
+                        Branch mispredictions are handled correctly
+            Comipler can help by reordering instructions
+            CPU resolves hazards using advanced techniques at runtime
+
+Speculation
+    "Guess" what to do with an instruction
+        Start operation ASAP
+        Validate whether guess was right
+            If so, complete the operation
+            If not, roll-back and do the right thing
+        Different with branch predictions
+            Where we can determine whether a branch was taken or not taken before the impacted state
+            In speculation
+                Allow instructions to impact the state of the processor
+                Need mechanism to rollback to return to the original state of the processor
+                Example:
+                    If I speculate that the branch is taken instead of not taken, I start executing a store instruction
+                        Store speculatively update memory structure that reflects the state of the memory
+                        If wrong, I will undo the effect of the store
+
+Compiler/Hardware Speculation
+    Compiler can reorder instructions
+        E.g. move load before branch
+        Can include "fix-up" instructions to recover from incorrect speculation
+        Advanced loads - move ahead of stores, checkload to ensure if the load was executed correctly
+    Hardware can look ahead
+        Buffer the results of independent instructions that are executing
+        Any new instructions will see the buffered results and make use of it
+            If wrong, flush some or all the buffer to remove incorrect state and restart speculation
+
+Speculation and Exceptions
+    If there's an exception that occurs, there are different mechanisms to handle whether static/dynamic speculation
+    Static
+        Additional ISA support for deferred exceptions
+            Make exception wait until it's sure "instruction should've been executed"
+    Dynamic
+        Buffering of exceptions until instruction is completed
+            If squashed, exception gets squashed
+
+Static Multiple Issue
+    Compiler bundles into "issue packets"
+        Group of instructions that can be issued on a single cycle
+            Independent instructions
+        Determined by pipeline resources required
+        Compiler will know what types of instruction to group
+    Issue packet
+        Very long instruction
+        Ex: 32-bit instructions bundled into 64-bit packet
+        Simplifies fetch
+        VLIW architecture
+            Very Long Instruction Word
+            Bundles can be of different sizes
+            Finding enough independent instrucitons
+                Noops if there's not enough
+                    Pad issue slots
+
+Scheduling Static Multiple Issue
+    Compiler responsible for removing hazards that occur
+        Instructions doesn't have depedencies to begin with
+        Compiler optimization
+    Dependencies between packets (in certain ISAs)
+        Compiler knows dependencies exist
+            Portability goes down
+
+MIPS with Static Dual Issue
+    Two-issue packets (two instructions at once)
+        One ALU/branch instruction
+        One load/store instruction
+        64-bit aligned
+            ALU/branch, then load/store
+            Pad an unsued instruction with nop
+        Do the whole pipeline with two instructions at one stage
+        Reduce the resources to duplicate in the pipeline
+
+Hazards in the Dual-Issue MIPS
+    More instructions executing in parallel
+        We can't use ALU result from load/store in the same packet
+        Adding into t0, and then loading based on t0
+        Forwarding not possible in a packet
+        Any hazards
+            Use stalling
+                Stall 2 instructions
+                    Increase penalty in CPI because more instructions stalled
+            More aggresive scheduling is required
 4_16
 Scheduling Example
     Schedule this for dual-issue MIPS
@@ -63,3 +189,81 @@ Loop Unrolling
                 $t0, $t1, $t2, $t3
                 
 4_17
+Dynamic Multiple Issue
+    "Superscalar" processors
+    CPU decides whether to issue 0, 1, 2, ... instructions each cycle
+        Keep track of structural and data hazards
+            Anything in the pipeline that might keep the instructions from making progress
+    Avoid the need of static scheduling or the use of compiler to perform scheduling
+        May still help for certain optimization
+        Make CPU easier to find things
+        Code semantics ensured by the CPU
+    Dynamic scheduling gives a peak of how the processor is performing for a given set of data at a given time
+    Static scheduling is good for long distance optimization
+
+Dynamic Pipeline Scheduling
+    Example code:
+        lw   $t0, 20($s2)
+        addu $t1, $t0, $t2
+        sub  $s4, $s4, $t3
+        slti $t5, $s4, 20
+    Allow the CPU to execute instructions out of order t o avoid stalls
+        Even though executing out of order, have to commit result to registers in order
+    Sample code, we can start sub while addu is waiting for lw
+
+Dynamically Scheduled CPU
+    Reservation station
+        Place for instructions to sit and wait before using a functional unit
+            Immediate resources to execute the instruction (example: ALU)
+        Until register operands are ready
+        Dependent instruction will go to integer reservation station, etc.
+        Any instruction waiting for a certain register value (example from the load-store) will be notified once load/store is done executing
+    All instructions will go to commit unit and committed in order
+
+Register Renaming
+    Needs to be done in dynamic out-of-order execution
+    If architecture supports 32 registers, we can have an RF with 128 registers by doing register renaming
+        When every logical register (provided by the compiler), it gets renamed into a physical register (actual register in the architecture)
+            Even if anti-dependence, we have ability to execute instructions in any order
+                Physical registers are independent from one another even if logical registers are not
+        ISA is limited by number of registers you can use (number of bits available),
+            No limit in theory to map logical registers to physical registers because we could make RF as large as possible
+                RF is expensive in terms of power, energy, area, and timing
+        Physical registers are used to identify dependencies in the reservation station
+            When instruction is waiting for physical register
+                Instruction that completes will write register value and specifier to bus that will be snooped by all reservation station
+
+Speculation
+    Predict branch and continue issuing
+        Don't commit until branch outcome determined
+            Until we're sure the instruction is actually going to be executed
+    Load speculation
+        Avoid load and cache miss delay
+            Predict the effective address
+            Predict loaded value
+            Load before completing outstanding stores
+            Bypass stored values to load unit
+        Don't commit load until speculation cleared
+    Speculation can be rampant in out-of-order phase but validated in the commit stage
+
+Why Do Dynamic Scheduling?
+    It's complex!
+    Why put effort into silicon and design time instead of software/compiler?
+        Not a lot of VLIW processors
+        Very difficult to predict stalls
+            Cache misses
+        Can't always schedule around barnches
+            Dynamically determined
+        Different implementations of an ISA have different latencies and hazards
+            One thing to change compiler for a different ISA but having to change for a different machine organizations reduces the economy of scale that we get out of a single compiler design
+
+Does Multiple Issue Work?
+    Yes, but not as much as we'd like
+        There's dependencies in programs that limit the parallelism that we can extract
+            Hard to eliminate pointer aliasing
+            Limited window size during instruction issue
+        These are limiting factors of why we have to make multi-core processors or multi-threaded applications
+            Hard to extract ILP
+        There are also memory delays and limited bandwidth
+            Hard to keep pipelines full
+    Speculation can help if done well

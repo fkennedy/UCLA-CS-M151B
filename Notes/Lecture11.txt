@@ -104,5 +104,238 @@ More-Realistic Branch Prediction
                 Usually tables
                 Indexed with PC of the branch
             Figure out whether the branch will be taken or not by the actual branch behavior
+
+Branch Hazards
+    If branch outcome determined in MEM
+        EX stage would compute whether the branch was taken or not
+        MEM stage would write into PC
+            Why can't write in PC during EX?
+    Assume our instructions are like this:
+        beq
+        and
+        or
+        add
+        lw
+
+        If assuming we had these instructions loaded in the pipeline
+        After cycle 4, beq will determine whether the branch was taken.
+            Beginning of cycle 5, lw enters the pipeline
+            Therefore, if we assumed incorrectly that the branch was not taken, we have to flush the next set of instructions until lw
+                Flushing means we convert the instructions to nops
+                    Setting control values to 0
+                and only reached the execution stage
+                    Hasn't affected the register file or memory because it hasn't reached the MEM/WB stage
+
+Reducing Branch Delay
+    Move hardware to determine outcome to ID stage
+        Target address adder
+        Register comparator
+    If we could avoid the overhead, it will be much more effective
+        Reduce the number of stages to flush to 2 instead of 3
+
 4_13
+Data Hazards for Branches
+    If the branch is dependent on the instructions that are before it, and it hasn't gotten the correct register values, it would not benefit from the existing forwarding hardware
+    For example:
+        add $1, $2, $3
+        add $4, $5, $6
+        ...
+        beq $1, $4, target
+        
+        No forwarding logic that would come to the ID stage, forwarding stage comes from the ALU stage
+            But if we waited until both instructions are executed and written back to the register, it will be too late because the branch will already be calculated
+                Instead of forwarding to the execution unit, we have to forward to the ID stage
+
+        Forward the values from add to $1's MEM stage and add to $4's EX stage to the beq's ID stage
+
+    If a comparision register is a destination of preceding ALU instruction or 2nd preceding load instruction
+        We need to stall with 1 cycle
+            So that it could forward from MEM/WB of lw and EX/MEM of add
+    For example:
+        lw  $1, addr
+        add $4, $5, $6
+        beq $1, $4, target      // We have to stall this instruction because its registers are dependent of lw and add
+
+    If a comparison register is a destination of immediately preceding load instruction
+        We need to stall with 2 cycles
+    For example:
+        lw  $1, addr
+        beq $1, $10, target
+
+Dynamic Branch Prediction
+    In a single cycle component per second, it relates to how much it costs for a branch misprediction
+        We'll look at dynamic prediction
+            Some form of prediction table (Pattern history table or branch history table)
+                Indexed by the PC you're trying to predict
+                    Stores 1 or 0 decisions
+                        Encoded dependent by the amount of bits by predictor
+                            Either taking decision or not taking decision
+            To execute a branch
+                We check the table, we'll see what it predicts
+                    Start fetching from fall-through or target
+                    If wrong, flush pipeline and get the correct path
+    The penalty for branch misprediction in
+        Deeper pipelines which are more aggresive in clock rates
+        Superscalar pipelines which executes more instructions in one cycle than just one instruction
+        In more advanced processors, branch penalty is more significant
+            Could be between 10-20 instructions
+            Stalling is not an option
+            Reducing becomes difficult
+
+1-Bit Predictor: Shortcoming
+    Single bit predictor
+        Array indexed by program counter
+            Each entry in the table holds a single bit
+            If branch was taken = set 1
+            If not = set 0
+        Problem becomes there's going to be hysteresis
+            Hysteresis is the inertia to accomplish something
+        If value keeps incrementing by 1, and we have an IF statement that goes:
+            T, NT, T, NT with said value
+            When the branch is predicts "Next time it will be not taken" from previous iteration,
+                But in reality the branch was taken
+                    This will result in an infinite loop of right predictions being 0%
+    Inner loop branches mispredicted twice
+        Mispredict as taken on last iteration of inner loop
+        Mispredict as not taken on first iteration of inner loop next time around
+
+2-bit Predictor
+    One bit for prediction
+    One bit for hysteresis
+    Therefore, prediction will only change on two successive mispredictions
+
+    DIAGRAM:
+        1       2
+        4       3
+
+        1: Predict taken
+        2: Predict taken
+        3: Predict not taken
+        4: Predict not taken
+
+        Taken:
+            1->1
+            2->1
+            3->2
+            4->3
+        Not taken:
+            1->2
+            2->3
+            3->4
+            4->4
+
+        1 & 4 are strongly-biased states
+            Have to see 2-in-a-row takens or not-takens to lave the state
+        2 & 3 are weakly-biased states
+            1 misprediction will take it to another weak state
+            2-in-a-row mispredictions will take it to a strongly-biased state
+
+Calculate the Branch Target
+    Once we have a direction predictor, we still need to calculate the target address
+        Adder - grabs immediate field and add it to PC+4
+        1-cycle penalty for a taken branch
+    Branch target buffer
+        Cache of targett addresses
+        Indexed by PC when instruciton fetched
+            If hit and instruction is branch predicted taken, we can fetch the target address immediately
+
 4_14
+Exceptions and Interrupts
+    "Unexpected" events requiring a change in flow of control
+        Exception - something that arise within the CPU
+            Overflow in the ALU
+            Div by 0
+            Opcode that wasn't defined that was executed
+        Interruption - some external component that is causing to change the flow of control
+            Keyboard - Ctrl+C was hit
+            Disk crashes
+            Processor needs to pay attention to these external things
+    Needs to change in flow of control examples:
+        Overflow that requires the OS to intervene and give the control to a handler software
+            Actual program to handler software
+    Exceptions - performance impact
+        Designed to be exceptional and not frequently occurring
+
+Handling Exceptions
+    In MIPS, exceptions are managed by CP0 (Control Coprocessor)
+        Needs mechanism to hand off the exceptional case to the coprocessor
+        Some notion of what causes the exception    
+            Save the PC of next instruction or the one that was interrupted
+        Store what cause the problem
+            Cause register - indicates the coprocessor what our problem is
+                0 for undefined opcode, 1 for overflow
+        Jump to handler at 8000 00180
+            Handler address where the software takes control and figure out what to do
+
+An Alternate Mechanism
+    Have different handler address determined by what problem occurred
+        Similar to a jump table
+        Example:
+            Undefined opcode    C000 0000
+            Overflow            C000 0020
+            ...                 C000 0040
+    Instructions either
+        Deal with the interrupt
+        Jump to real handler
+
+Handler Actions
+    Read cause, see what code to execute to take care of the problem
+    If exception is restartable (can return to program)
+        Take corrective action
+        Use EPC to return to program
+    If not
+        Terminate program
+        Report error using EPC
+
+Exceptions in a Pipeline
+    Form of control hazard
+    Consider overflow on add in EX stage of
+        add $1, $2, $1
+    Steps taken:
+        Raise exception to prevent $1 from being overwritten
+        Instructions before are completed
+        Stop instruction in the exceptional state
+        Flush add and subsequent instructions
+        Set Cause and EPC register values
+        Transfer control to handler
+    Similar to mispredicted branch
+        Branch - can continue to execute
+        Exception - have to restart the instruction
+        Hardware can overlap between the two
+
+Exception Properties
+    Restartable excpetions
+        Pipeline can flush the instruction
+            Can reexecute on the EPC register
+                PC is saved
+                    Identifies causing instruction
+                    Only PC+4 is saved
+                        Handler must adjust
+        Handler executes then returns to the instruction
+            Refetched and executed from scratch
+
+Multiple Exceptions
+    Could have multiple exceptions at once
+        Undefined opcode and overflow at the same time in the EX stage
+    Simple approach is to deal with the exception from the earliest instruction
+        Flush subsequent instructions
+        "Precise" exceptions
+            Following the correct program order of exceptions
+    In complex pipelines
+        Multiple instructions issued per cycle
+        Out-of-order completion
+        Maintaining precise exceptions is difficult
+
+Imprecise Exceptions
+    Shortcut for us to get around exceptions without all the hardware
+    Just stop the pipeline at whatever point you see an exception
+        Include all the exception cause(s)
+        Save the state
+    Then let the handler work out
+        Which instruction(s) had exceptions
+        Which to complete or flush
+            May require "manual" completion
+    Software will be taking over
+        Simplifies hardware
+        Overhead for exceptions higher because of software cause
+    Not feasible for complex multiple-issue out-of-order pipelines

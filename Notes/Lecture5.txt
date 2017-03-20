@@ -1,5 +1,5 @@
-Week 3
-Chapter 3: Arithmetic for Computers
+Week 3 - Wednesday
+Chapter 3 - Arithmetic for Computers
 
 3_1
 Arithmetic for Computers

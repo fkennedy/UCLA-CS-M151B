@@ -1,5 +1,5 @@
-Week 4
-Chapter 4: The Processor
+Week 4 - Wednesday
+Chapter 4 - The Processor
 
 4_1
 Introduction    

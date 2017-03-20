@@ -1,4 +1,4 @@
-Week 3
+Week 3 - Monday
 2_3
 Representing Instructions
     Instructions are encoded in binary

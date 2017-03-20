@@ -1,4 +1,4 @@
-Week 5
+Week 5 - Wednesday
 4_6
 Pipeline Operation
     Cycle-by-cycle flow of instructions through the pipelined datapath
