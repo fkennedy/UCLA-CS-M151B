@@ -1,0 +1,8 @@
+Winter 2010 Final
+1.
+    a) Single-issue pipeline always have CPI = 1
+    b) Steady state is when all the resources are working on a stage
+    c) Larger blocks for spatial locality and higher associativity to handle misses
+
+3.
+    

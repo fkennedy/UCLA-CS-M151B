@@ -50,6 +50,43 @@ Interactions with Software
     Misses are dependent on the memory access patterns
         Algorithm behavior
         Compiler optimization for memory access
-    
+
 5_6
+Virtual Memory
+    Rather having a shared address space, we allowed each application to think that it has its own virtual address space that it owns
+        Disables sharing
+        Prevents overlap
+        Provides protection for different applications
+    Use main memory as a "cache" for secondary (disk) storage
+        Manged jointly by CPU hardware and the operating system
+    CPU and OS translate virtual addresses to physical addresses
+        VM "block" is called a page
+        VM translation "miss" is called a page fault
+
+Address Translation
+    Fixed-size pages
+        Virtual addresses contains addresses from disk and from physical memory
+    Virtual address - 32 bits
+    Physical address - 30 bits
+    Page offset is the same
+    Allows us to have 2^20 bits of virtual memory stored into 2^18 bits of physical memory
+
+Page Fault Penalty
+    On a page fault, the page must be fetched from the disk
+        Page faults are extremely expensive
+        Takes millions of clock cycles
+        Handled by OS code
+    Try to minimize the page fault rate
+        Fully associative placement
+        Smart replacement algorithms
+
+Page Tables
+    Stores placement information
+        Array of page table entries, indexed by virtual page number
+        Page table register in CPU points to page table in physical memory
+    If page is present in memory
+        PTE stores the physical page number
+        Plus other status bits (referenced, dirty, etc...)
+    If page is not present
+        PTE can refer to location in swap space on disk
 5_7
